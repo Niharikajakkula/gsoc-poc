@@ -1,23 +1,24 @@
-<<<<<<< HEAD
 # 🚀 Niharika's API Explorer Pipeline - PoC
 
-> **A minimal Proof of Concept for an API Explorer pipeline that parses OpenAPI JSON files and serves them through a simple backend.**
+> **An enhanced Proof of Concept for an API Explorer pipeline that parses OpenAPI JSON files and serves them through a simple backend.**
 
 **Author:** Niharika Jakkula  
 **Project:** GSoC 2026 PoC  
-**Repository:** https://github.com/Niharikajakkula/gsoc-poc
+**Repository:** [https://github.com/Niharikajakkula/gsoc-poc](https://github.com/Niharikajakkula/gsoc-poc)
 
 ## 📋 Overview
 
-This project demonstrates a simple pipeline that:
-1. **Parses** OpenAPI JSON files using Python
-2. **Extracts** key API information (name, base URL, endpoints)
-3. **Stores** the data in a structured JSON registry with duplicate prevention
-4. **Serves** the APIs through a Node.js Express backend
+This project demonstrates an enhanced pipeline that:
+
+1. **Parses** OpenAPI JSON files using Python with comprehensive validation
+2. **Extracts** key API information (name, base URL, endpoints) with data normalization
+3. **Prevents Duplicates** using smart name + baseUrl combination checking
+4. **Stores** the data in a structured JSON registry with UUID tracking
+5. **Serves** the APIs through a Node.js Express backend with RESTful design
 
 ## 🏗️ Project Structure
 
-```
+```text
 niharika_api-explorer-poc/
 ├── pipeline/
 │   └── parser.py              # Enhanced Python OpenAPI parser
@@ -39,33 +40,71 @@ niharika_api-explorer-poc/
 ## ✨ Enhanced Features
 
 ### 🔄 **Duplicate Prevention**
+
 - Prevents duplicate APIs by checking `name` + `baseUrl` combination
 - Updates existing APIs instead of creating duplicates
 - Handles same name with different baseUrl as separate APIs
 
+**Example Logic:**
+
+```text
+"Pet Store API" + "https://api.v1.com" → API #1
+"Pet Store API" + "https://api.v2.com" → API #2 (separate entry)
+"Pet Store API" + "https://api.v1.com" → Updates API #1 (no duplicate)
+```
+
 ### 🧹 **Data Normalization**
+
 - Converts all HTTP methods to uppercase (GET, POST, PUT, DELETE)
 - Ensures missing summaries are stored as empty strings `""`
 - Removes null/undefined fields
 - Sorts endpoints alphabetically by path and method
 
+**Before vs After:**
+
+```python
+# Before: "get" → After: "GET"
+# Before: null summary → After: ""
+# Before: undefined baseUrl → After: ""
+```
+
 ### 🛡️ **Robust Error Handling**
+
 - Validates OpenAPI file structure
-- Handles missing `servers` field gracefully
+- Handles missing `servers` field gracefully (sets baseUrl = "")
 - Provides clear error messages for invalid JSON
 - Safe registry file operations with backup/recovery
 
+**Error Types Handled:**
+
+- File not found
+- Invalid JSON format
+- Missing required OpenAPI sections
+- Registry file corruption
+
 ### 🆔 **Enhanced Tracking**
+
 - Unique UUID for each API entry
 - `lastUpdated` timestamp in ISO format
 - Detailed console progress logging
 - Operation tracking (Added vs Updated)
 
+**Registry Enhancement:**
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "Pet Store API",
+  "lastUpdated": "2024-01-01T12:00:00.000000"
+}
+```
+
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.6+ (no external libraries required)
-- Node.js 14+ (for backend)
+
+- **Python 3.6+** (no external libraries required)
+- **Node.js 14+** (for backend server)
 
 ### Step 1: Parse OpenAPI Files
 
@@ -83,6 +122,15 @@ python pipeline/parser.py data/minimal_openapi.json
 python pipeline/parser.py data/test_new_api.json
 ```
 
+**Expected Output:**
+
+```text
+[SUCCESS] Pipeline completed successfully!
+[SUMMARY] API Added Successfully:
+   Name: Pet Store API
+   Endpoints: 7
+```
+
 ### Step 2: Start the Backend
 
 ```bash
@@ -96,7 +144,7 @@ npm install
 npm start
 ```
 
-### Step 3: Test the API
+### Step 3: Test the API Endpoints
 
 ```bash
 # Get all APIs
@@ -107,20 +155,52 @@ curl http://localhost:3000/apis/0
 
 # Health check
 curl http://localhost:3000/health
+
+# API documentation
+curl http://localhost:3000/
+```
+
+**Expected Response:**
+
+```json
+{
+  "success": true,
+  "count": 2,
+  "apis": [...],
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
 ```
 
 ## 🧪 Testing & Validation
 
 ### Run Comprehensive Tests
+
 ```bash
 # Test all improvements and features
 python test-improvements.py
+```
 
-# Run quick demo
+**Expected Output:**
+
+```text
+🧪 Testing Enhanced API Explorer Parser
+==================================================
+1️⃣ Testing: Add new API
+✅ First API added successfully
+2️⃣ Testing: Update existing API (duplicate prevention)
+✅ Duplicate prevention working
+🎉 All tests passed!
+```
+
+### Run Quick Demo
+
+```bash
+# Run interactive demo
 python run-demo.py
 ```
 
 ### Test Individual Components
+
 ```bash
 # Test parser with different files
 python pipeline/parser.py data/sample_openapi.json
@@ -133,6 +213,7 @@ python pipeline/parser.py nonexistent.json
 ## 📊 Example Input/Output
 
 ### Input (OpenAPI JSON)
+
 ```json
 {
   "openapi": "3.0.0",
@@ -159,6 +240,7 @@ python pipeline/parser.py nonexistent.json
 ```
 
 ### Output (Generated Registry)
+
 ```json
 [
   {
@@ -185,9 +267,11 @@ python pipeline/parser.py nonexistent.json
 ## 🌐 Backend API Endpoints
 
 ### GET /apis
+
 Returns all APIs from the registry.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -198,11 +282,13 @@ Returns all APIs from the registry.
 ```
 
 ### GET /apis/:id
+
 Returns a specific API by index.
 
 **Example:** `GET /apis/0`
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -218,9 +304,11 @@ Returns a specific API by index.
 ```
 
 ### GET /health
+
 Health check endpoint with system information.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -235,7 +323,8 @@ Health check endpoint with system information.
 ## 📝 Sample Console Output
 
 ### Parser Output
-```
+
+```text
 API Explorer Pipeline - Enhanced OpenAPI Parser
 ============================================================
 Features: Duplicate prevention, data normalization, error handling
@@ -276,7 +365,8 @@ Features: Duplicate prevention, data normalization, error handling
 ```
 
 ### Backend Output
-```
+
+```text
 🚀 ================================
 🚀 Niharika's API Explorer Backend
 🚀 ================================
@@ -295,12 +385,14 @@ Features: Duplicate prevention, data normalization, error handling
 ## 🛠️ Technical Features
 
 ### Python Parser
+
 - **Built-in Libraries Only**: Uses only `json`, `os`, `sys`, `uuid`, `datetime`
 - **Cross-Platform**: Works on Windows, Linux, and macOS
 - **Modular Design**: Clean separation of concerns with focused functions
 - **Comprehensive Validation**: Handles edge cases and malformed data
 
 ### Node.js Backend
+
 - **Minimal Dependencies**: Only Express and CORS
 - **RESTful Design**: Standard HTTP methods and status codes
 - **Error Handling**: Graceful error responses with helpful messages
@@ -309,7 +401,7 @@ Features: Duplicate prevention, data normalization, error handling
 ## 🎯 Key Improvements Over Basic Version
 
 | Feature | Basic Version | Enhanced Version |
-|---------|---------------|------------------|
+| ------- | ------------- | ---------------- |
 | Duplicates | Always adds new | Smart duplicate prevention |
 | Data Quality | Raw data | Normalized and validated |
 | Error Handling | Basic try/catch | Comprehensive validation |
@@ -321,6 +413,7 @@ Features: Duplicate prevention, data normalization, error handling
 ## 🚀 Future Enhancements
 
 This PoC provides a solid foundation for:
+
 - **YAML Support**: Parse OpenAPI YAML files
 - **Batch Processing**: Handle multiple files at once
 - **API Validation**: Test API endpoints automatically
@@ -333,6 +426,7 @@ This PoC provides a solid foundation for:
 This is a GSoC 2026 PoC project. Suggestions and feedback are welcome!
 
 ### Development Setup
+
 1. Fork the repository
 2. Clone your fork
 3. Make changes
@@ -353,40 +447,3 @@ MIT License - see LICENSE file for details
 
 **Built with ❤️ by Niharika Jakkula for GSoC 2026**  
 **Demonstrating clean code, robust error handling, and production-ready architecture**
-=======
-# GSoC Proof of Concepts
-
-1. Fork this repo & create a new branch.
-2. Create a new folder inside `2026` with the name `yourname_project_name`.
-3. Add your PoC inside it and send across a PR.
-
-We have some major updates with respect to the Proof of Concept (PoC) submission.
-
-👉 Any PoC that is a new project or is not directly dependent on API Dash source code should be submitted to the repository - https://github.com/foss42/gsoc-poc  
-
-👉 PoCs should be sent through this process. You can have a version hosted on personal repo or any website/link, but this way it will be easier to keep track of the submitted PoC as your PoC link might be buried in your proposal. It will also ease the review process and declutter the main repo PRs.  
-
-👉 If you PoC involves **MCP testing**, you must go thorough these resources - 
-1. https://dev.to/aws/how-i-built-mcp-apps-based-sales-analytics-agentic-ui-deployed-it-on-amazon-bedrock-agentcore-4e9i
-2. https://github.com/ashitaprasad/sample-mcp-apps-chatflow
-
-and demonstrate the testing of the Sales Analytics MCP Apps server provided in the link via the PoC you are building.
-
-👉 If you are submitting **API Dash MCP Server** PoC or **AI Agents** PoC that include calling API Dash MCP server, you must go thorough these resource - 
-1. https://dev.to/aws/how-i-built-mcp-apps-based-sales-analytics-agentic-ui-deployed-it-on-amazon-bedrock-agentcore-4e9i
-2. https://github.com/ashitaprasad/sample-mcp-apps-chatflow
-
-to understand the provided MCP Apps server code, and explore if API Dash MCP Apps can be served in the tool.
-
-👉 Apart from the proposed solution, **Multimodal AI Eval** project candidates must also go through these resource - 
-1. https://dev.to/aws/how-i-built-mcp-apps-based-sales-analytics-agentic-ui-deployed-it-on-amazon-bedrock-agentcore-4e9i
-2. https://github.com/ashitaprasad/sample-mcp-apps-chatflow
-
-and explore if AI evaluation UI can be built using it to make it easy for end users to run evals from inside AI agents.
-
-👉 For **Open Responses** project, you must also go through these resources - 
-1. https://dev.to/aws/how-i-built-mcp-apps-based-sales-analytics-agentic-ui-deployed-it-on-amazon-bedrock-agentcore-4e9i
-2. https://github.com/ashitaprasad/sample-mcp-apps-chatflow
-
-and explore how Open Responses can be rendered from inside AI agents.
->>>>>>> 3a63bbbfcde0c1784a547983769c0d6cd6e60ece
