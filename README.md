@@ -397,8 +397,7 @@ This project is developed as a **GSoC 2026 Proof of Concept**.
 - **Examples**: See `/examples` for usage patterns
 
 ---
-
-**Built with ❤️ for GSoC 2026**  
+ 
 **Transforming API documentation from static to interactive**
 
 ## About
