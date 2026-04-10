@@ -1,0 +1,431 @@
+[
+  {
+    "id": "0814bdc4-4198-4d4c-9116-a69196c42bd9",
+    "name": "Pet Store API",
+    "baseUrl": "https://petstore.example.com/api/v1",
+    "authType": "none",
+    "authDetails": {},
+    "endpoints": [
+      {
+        "path": "/categories",
+        "method": "GET",
+        "summary": "List categories",
+        "authType": "none",
+        "templates": {
+          "curl": "curl -X GET \\\n  \"https://petstore.example.com/api/v1/categories\"",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://petstore.example.com/api/v1/categories\" `\n  -Method GET"
+        },
+        "description": "List categories"
+      },
+      {
+        "path": "/pets",
+        "method": "GET",
+        "summary": "List all pets",
+        "authType": "none",
+        "templates": {
+          "curl": "curl -X GET \\\n  \"https://petstore.example.com/api/v1/pets\"",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://petstore.example.com/api/v1/pets\" `\n  -Method GET"
+        },
+        "description": "List all pets"
+      },
+      {
+        "path": "/pets",
+        "method": "POST",
+        "summary": "Create a new pet",
+        "authType": "none",
+        "templates": {
+          "curl": "curl -X POST \\\n  \"https://petstore.example.com/api/v1/pets\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"name\": \"Fluffy\",\n  \"species\": \"cat\",\n  \"age\": 3\n}'",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://petstore.example.com/api/v1/pets\" `\n  -Method POST `\n  -Headers @{\"Content-Type\" = \"application/json\"} `\n  -Body '{\n  \"\"name\"\": \"\"Fluffy\"\",\n  \"\"species\"\": \"\"cat\"\",\n  \"\"age\"\": 3\n}'"
+        },
+        "description": "Create a new pet"
+      },
+      {
+        "path": "/pets/search",
+        "method": "GET",
+        "summary": "Search pets",
+        "authType": "none",
+        "templates": {
+          "curl": "curl -X GET \\\n  \"https://petstore.example.com/api/v1/pets/search\"",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://petstore.example.com/api/v1/pets/search\" `\n  -Method GET"
+        },
+        "description": "Search pets"
+      },
+      {
+        "path": "/pets/{petId}",
+        "method": "DELETE",
+        "summary": "Delete pet",
+        "authType": "none",
+        "templates": {
+          "curl": "curl -X DELETE \\\n  \"https://petstore.example.com/api/v1/pets/123\"",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://petstore.example.com/api/v1/pets/123\" `\n  -Method DELETE"
+        },
+        "description": "Delete pet"
+      },
+      {
+        "path": "/pets/{petId}",
+        "method": "GET",
+        "summary": "Get pet by ID",
+        "authType": "none",
+        "templates": {
+          "curl": "curl -X GET \\\n  \"https://petstore.example.com/api/v1/pets/123\"",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://petstore.example.com/api/v1/pets/123\" `\n  -Method GET"
+        },
+        "description": "Get pet by ID"
+      },
+      {
+        "path": "/pets/{petId}",
+        "method": "PUT",
+        "summary": "Update pet",
+        "authType": "none",
+        "templates": {
+          "curl": "curl -X PUT \\\n  \"https://petstore.example.com/api/v1/pets/123\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"name\": \"Fluffy\",\n  \"species\": \"cat\",\n  \"age\": 3\n}'",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://petstore.example.com/api/v1/pets/123\" `\n  -Method PUT `\n  -Headers @{\"Content-Type\" = \"application/json\"} `\n  -Body '{\n  \"\"name\"\": \"\"Fluffy\"\",\n  \"\"species\"\": \"\"cat\"\",\n  \"\"age\"\": 3\n}'"
+        },
+        "description": "Update pet"
+      }
+    ],
+    "lastUpdated": "2026-04-09T14:17:43.158605"
+  },
+  {
+    "id": "be907f73-8770-4f26-97cc-92b2d905d8a1",
+    "name": "Petstore API",
+    "baseUrl": "https://petstore.swagger.io/v2",
+    "authType": "none",
+    "authDetails": {},
+    "endpoints": [
+      {
+        "path": "/pets",
+        "method": "GET",
+        "summary": "List all pets",
+        "authType": "none",
+        "templates": {
+          "curl": "curl -X GET \\\n  \"https://petstore.swagger.io/v2/pets\"",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://petstore.swagger.io/v2/pets\" `\n  -Method GET"
+        },
+        "description": "List all pets"
+      },
+      {
+        "path": "/pets",
+        "method": "POST",
+        "summary": "Create a pet",
+        "authType": "none",
+        "templates": {
+          "curl": "curl -X POST \\\n  \"https://petstore.swagger.io/v2/pets\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"name\": \"Fluffy\",\n  \"species\": \"cat\",\n  \"age\": 3\n}'",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://petstore.swagger.io/v2/pets\" `\n  -Method POST `\n  -Headers @{\"Content-Type\" = \"application/json\"} `\n  -Body '{\n  \"\"name\"\": \"\"Fluffy\"\",\n  \"\"species\"\": \"\"cat\"\",\n  \"\"age\"\": 3\n}'"
+        },
+        "description": "Create a pet"
+      },
+      {
+        "path": "/pets/{petId}",
+        "method": "DELETE",
+        "summary": "Delete pet",
+        "authType": "none",
+        "templates": {
+          "curl": "curl -X DELETE \\\n  \"https://petstore.swagger.io/v2/pets/123\"",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://petstore.swagger.io/v2/pets/123\" `\n  -Method DELETE"
+        },
+        "description": "Delete pet"
+      },
+      {
+        "path": "/pets/{petId}",
+        "method": "GET",
+        "summary": "Get pet by ID",
+        "authType": "none",
+        "templates": {
+          "curl": "curl -X GET \\\n  \"https://petstore.swagger.io/v2/pets/123\"",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://petstore.swagger.io/v2/pets/123\" `\n  -Method GET"
+        },
+        "description": "Get pet by ID"
+      },
+      {
+        "path": "/pets/{petId}",
+        "method": "PUT",
+        "summary": "Update pet",
+        "authType": "none",
+        "templates": {
+          "curl": "curl -X PUT \\\n  \"https://petstore.swagger.io/v2/pets/123\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"name\": \"Fluffy\",\n  \"species\": \"cat\",\n  \"age\": 3\n}'",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://petstore.swagger.io/v2/pets/123\" `\n  -Method PUT `\n  -Headers @{\"Content-Type\" = \"application/json\"} `\n  -Body '{\n  \"\"name\"\": \"\"Fluffy\"\",\n  \"\"species\"\": \"\"cat\"\",\n  \"\"age\"\": 3\n}'"
+        },
+        "description": "Update pet"
+      }
+    ],
+    "lastUpdated": "2026-04-09T14:17:43.177316"
+  },
+  {
+    "id": "add06c20-0b9b-4270-85a1-29cccec6ea1b",
+    "name": "Auth Examples API",
+    "baseUrl": "https://api.example.com/v1",
+    "authType": "apiKey",
+    "authDetails": {
+      "type": "apiKey",
+      "name": "X-API-Key",
+      "in": "header",
+      "schemeName": "ApiKeyAuth"
+    },
+    "endpoints": [
+      {
+        "path": "/protected",
+        "method": "GET",
+        "summary": "Protected endpoint",
+        "authType": "bearer",
+        "templates": {
+          "curl": "curl -X GET \\\n  \"https://api.example.com/v1/protected\" \\\n  -H \"Authorization: Bearer YOUR_TOKEN\"",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://api.example.com/v1/protected\" `\n  -Method GET `\n  -Headers @{\"Authorization\" = \"Bearer YOUR_TOKEN\"}"
+        },
+        "description": "Protected endpoint"
+      },
+      {
+        "path": "/users",
+        "method": "GET",
+        "summary": "Get users",
+        "authType": "apiKey",
+        "templates": {
+          "curl": "curl -X GET \\\n  \"https://api.example.com/v1/users\" \\\n  -H \"X-API-Key: YOUR_API_KEY\"",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://api.example.com/v1/users\" `\n  -Method GET `\n  -Headers @{\"X-API-Key\" = \"YOUR_API_KEY\"}"
+        },
+        "description": "Get users"
+      }
+    ],
+    "lastUpdated": "2026-04-09T14:17:43.078695"
+  },
+  {
+    "id": "838abbdc-9b26-421b-bc56-6ff92697132b",
+    "name": "Public API",
+    "baseUrl": "https://public-api.example.com",
+    "authType": "none",
+    "authDetails": {},
+    "endpoints": [
+      {
+        "path": "/public",
+        "method": "GET",
+        "summary": "Public endpoint",
+        "authType": "none",
+        "templates": {
+          "curl": "curl -X GET \\\n  \"https://public-api.example.com/public\"",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://public-api.example.com/public\" `\n  -Method GET"
+        },
+        "description": "Public endpoint"
+      }
+    ],
+    "lastUpdated": "2026-04-09T14:17:43.137485"
+  },
+  {
+    "id": "8c665694-47ed-4b7c-8647-e0fd3d07c0bf",
+    "name": "Multi-Auth API",
+    "baseUrl": "https://api.example.com/v1",
+    "authType": "apiKey",
+    "authDetails": {
+      "type": "apiKey",
+      "name": "X-API-Key",
+      "in": "header",
+      "schemeName": "ApiKeyAuth"
+    },
+    "endpoints": [
+      {
+        "path": "/admin",
+        "method": "POST",
+        "summary": "Admin endpoint",
+        "authType": "apiKey",
+        "templates": {
+          "curl": "curl -X POST \\\n  \"https://api.example.com/v1/admin\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"X-API-Key: YOUR_API_KEY\" \\\n  -d '{\n  \"name\": \"Sample Name\",\n  \"description\": \"Sample description\"\n}'",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://api.example.com/v1/admin\" `\n  -Method POST `\n  -Headers @{\"Content-Type\" = \"application/json\"; \"X-API-Key\" = \"YOUR_API_KEY\"} `\n  -Body '{\n  \"\"name\"\": \"\"Sample Name\"\",\n  \"\"description\"\": \"\"Sample description\"\"\n}'"
+        },
+        "description": "Admin endpoint"
+      },
+      {
+        "path": "/public",
+        "method": "GET",
+        "summary": "Public endpoint",
+        "authType": "none",
+        "templates": {
+          "curl": "curl -X GET \\\n  \"https://api.example.com/v1/public\"",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://api.example.com/v1/public\" `\n  -Method GET"
+        },
+        "description": "Public endpoint"
+      },
+      {
+        "path": "/users",
+        "method": "GET",
+        "summary": "Get users (uses global auth)",
+        "authType": "apiKey",
+        "templates": {
+          "curl": "curl -X GET \\\n  \"https://api.example.com/v1/users\" \\\n  -H \"X-API-Key: YOUR_API_KEY\"",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://api.example.com/v1/users\" `\n  -Method GET `\n  -Headers @{\"X-API-Key\" = \"YOUR_API_KEY\"}"
+        },
+        "description": "Get users (uses global auth)"
+      }
+    ],
+    "lastUpdated": "2026-04-09T14:17:43.126600"
+  },
+  {
+    "id": "70c709a6-2e96-416f-a32a-df1adce3c4c0",
+    "name": "Bearer Auth Test API",
+    "baseUrl": "https://api.example.com/v1",
+    "authType": "bearer",
+    "authDetails": {
+      "type": "http",
+      "scheme": "bearer",
+      "schemeName": "BearerAuth",
+      "bearerFormat": "JWT"
+    },
+    "endpoints": [
+      {
+        "path": "/admin",
+        "method": "POST",
+        "summary": "Admin endpoint (uses bearer)",
+        "authType": "bearer",
+        "templates": {
+          "curl": "curl -X POST \\\n  \"https://api.example.com/v1/admin\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer YOUR_TOKEN\" \\\n  -d '{\n  \"name\": \"Sample Name\",\n  \"description\": \"Sample description\"\n}'",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://api.example.com/v1/admin\" `\n  -Method POST `\n  -Headers @{\"Content-Type\" = \"application/json\"; \"Authorization\" = \"Bearer YOUR_TOKEN\"} `\n  -Body '{\n  \"\"name\"\": \"\"Sample Name\"\",\n  \"\"description\"\": \"\"Sample description\"\"\n}'"
+        },
+        "description": "Admin endpoint (uses bearer)"
+      },
+      {
+        "path": "/public",
+        "method": "GET",
+        "summary": "Public endpoint",
+        "authType": "none",
+        "templates": {
+          "curl": "curl -X GET \\\n  \"https://api.example.com/v1/public\"",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://api.example.com/v1/public\" `\n  -Method GET"
+        },
+        "description": "Public endpoint"
+      },
+      {
+        "path": "/users",
+        "method": "GET",
+        "summary": "Get users (inherits bearer)",
+        "authType": "bearer",
+        "templates": {
+          "curl": "curl -X GET \\\n  \"https://api.example.com/v1/users\" \\\n  -H \"Authorization: Bearer YOUR_TOKEN\"",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://api.example.com/v1/users\" `\n  -Method GET `\n  -Headers @{\"Authorization\" = \"Bearer YOUR_TOKEN\"}"
+        },
+        "description": "Get users (inherits bearer)"
+      }
+    ],
+    "lastUpdated": "2026-04-09T14:17:43.193605"
+  },
+  {
+    "id": "58402dca-888c-4d2a-91e5-b84f1201ba33",
+    "name": "Endpoint Auth Test API",
+    "baseUrl": "https://api.example.com/v1",
+    "authType": "apiKey",
+    "authDetails": {
+      "type": "apiKey",
+      "name": "X-API-Key",
+      "in": "header",
+      "schemeName": "ApiKeyAuth"
+    },
+    "endpoints": [
+      {
+        "path": "/admin",
+        "method": "POST",
+        "summary": "Admin endpoint (specific API key auth)",
+        "authType": "apiKey",
+        "templates": {
+          "curl": "curl -X POST \\\n  \"https://api.example.com/v1/admin\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"X-API-Key: YOUR_API_KEY\" \\\n  -d '{\n  \"name\": \"Sample Name\",\n  \"description\": \"Sample description\"\n}'",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://api.example.com/v1/admin\" `\n  -Method POST `\n  -Headers @{\"Content-Type\" = \"application/json\"; \"X-API-Key\" = \"YOUR_API_KEY\"} `\n  -Body '{\n  \"\"name\"\": \"\"Sample Name\"\",\n  \"\"description\"\": \"\"Sample description\"\"\n}'"
+        },
+        "description": "Admin endpoint (specific API key auth)"
+      },
+      {
+        "path": "/health",
+        "method": "GET",
+        "summary": "Health check (no security defined, inherits global)",
+        "authType": "apiKey",
+        "templates": {
+          "curl": "curl -X GET \\\n  \"https://api.example.com/v1/health\" \\\n  -H \"X-API-Key: YOUR_API_KEY\"",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://api.example.com/v1/health\" `\n  -Method GET `\n  -Headers @{\"X-API-Key\" = \"YOUR_API_KEY\"}"
+        },
+        "description": "Health check (no security defined, inherits global)"
+      },
+      {
+        "path": "/public",
+        "method": "GET",
+        "summary": "Public endpoint (no auth required)",
+        "authType": "none",
+        "templates": {
+          "curl": "curl -X GET \\\n  \"https://api.example.com/v1/public\"",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://api.example.com/v1/public\" `\n  -Method GET"
+        },
+        "description": "Public endpoint (no auth required)"
+      },
+      {
+        "path": "/users",
+        "method": "GET",
+        "summary": "Get users (inherits global bearer auth)",
+        "authType": "apiKey",
+        "templates": {
+          "curl": "curl -X GET \\\n  \"https://api.example.com/v1/users\" \\\n  -H \"X-API-Key: YOUR_API_KEY\"",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://api.example.com/v1/users\" `\n  -Method GET `\n  -Headers @{\"X-API-Key\" = \"YOUR_API_KEY\"}"
+        },
+        "description": "Get users (inherits global bearer auth)"
+      }
+    ],
+    "lastUpdated": "2026-04-09T14:17:43.099251"
+  },
+  {
+    "id": "e3df865e-3c91-45a5-ba84-0875fbc73135",
+    "name": "Minimal API",
+    "baseUrl": "",
+    "authType": "none",
+    "authDetails": {},
+    "endpoints": [
+      {
+        "path": "/health",
+        "method": "GET",
+        "summary": "",
+        "authType": "none",
+        "templates": {
+          "curl": "curl -X GET \\\n  \"https://api.example.com/health\"",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://api.example.com/health\" `\n  -Method GET"
+        },
+        "description": ""
+      },
+      {
+        "path": "/users",
+        "method": "GET",
+        "summary": "Get users",
+        "authType": "none",
+        "templates": {
+          "curl": "curl -X GET \\\n  \"https://api.example.com/users\"",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://api.example.com/users\" `\n  -Method GET"
+        },
+        "description": "Get users"
+      },
+      {
+        "path": "/users",
+        "method": "POST",
+        "summary": "Create user (no summary field)",
+        "authType": "none",
+        "templates": {
+          "curl": "curl -X POST \\\n  \"https://api.example.com/users\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\"\n}'",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://api.example.com/users\" `\n  -Method POST `\n  -Headers @{\"Content-Type\" = \"application/json\"} `\n  -Body '{\n  \"\"name\"\": \"\"John Doe\"\",\n  \"\"email\"\": \"\"john@example.com\"\"\n}'"
+        },
+        "description": "Create user (no summary field)"
+      }
+    ],
+    "lastUpdated": "2026-04-09T14:17:43.112151"
+  },
+  {
+    "id": "ecf29633-791f-4386-9060-409ab56a100f",
+    "name": "Pet Store API",
+    "baseUrl": "https://api.newpetstore.com/v2",
+    "authType": "none",
+    "authDetails": {},
+    "endpoints": [
+      {
+        "path": "/animals",
+        "method": "GET",
+        "summary": "List all animals",
+        "authType": "none",
+        "templates": {
+          "curl": "curl -X GET \\\n  \"https://api.newpetstore.com/v2/animals\"",
+          "powershell": "Invoke-RestMethod `\n  -Uri \"https://api.newpetstore.com/v2/animals\" `\n  -Method GET"
+        },
+        "description": "List all animals"
+      }
+    ],
+    "lastUpdated": "2026-04-09T14:17:43.202755"
+  }
+]

@@ -1,0 +1,286 @@
+[
+  {
+    "id": "15088a03-580f-4f16-8270-5cc95a5d7a9a",
+    "name": "Auth Examples API",
+    "baseUrl": "https://api.example.com/v1",
+    "authType": "apiKey",
+    "authDetails": {
+      "type": "apiKey",
+      "name": "X-API-Key",
+      "in": "header",
+      "schemeName": "ApiKeyAuth"
+    },
+    "endpoints": [
+      {
+        "path": "/protected",
+        "method": "GET",
+        "summary": "Protected endpoint",
+        "authType": "bearer"
+      },
+      {
+        "path": "/users",
+        "method": "GET",
+        "summary": "Get users",
+        "authType": "apiKey"
+      }
+    ],
+    "lastUpdated": "2026-04-09T14:18:14.697884"
+  },
+  {
+    "id": "08c12ef9-ed18-4867-838a-42ed27623447",
+    "name": "Endpoint Auth Test API",
+    "baseUrl": "https://api.example.com/v1",
+    "authType": "apiKey",
+    "authDetails": {
+      "type": "apiKey",
+      "name": "X-API-Key",
+      "in": "header",
+      "schemeName": "ApiKeyAuth"
+    },
+    "endpoints": [
+      {
+        "path": "/admin",
+        "method": "POST",
+        "summary": "Admin endpoint (specific API key auth)",
+        "authType": "apiKey"
+      },
+      {
+        "path": "/health",
+        "method": "GET",
+        "summary": "Health check (no security defined, inherits global)",
+        "authType": "apiKey"
+      },
+      {
+        "path": "/public",
+        "method": "GET",
+        "summary": "Public endpoint (no auth required)",
+        "authType": "none"
+      },
+      {
+        "path": "/users",
+        "method": "GET",
+        "summary": "Get users (inherits global bearer auth)",
+        "authType": "apiKey"
+      }
+    ],
+    "lastUpdated": "2026-04-09T14:18:14.714453"
+  },
+  {
+    "id": "6cadb433-0497-4718-abb2-892336856fb5",
+    "name": "Minimal API",
+    "baseUrl": "",
+    "authType": "none",
+    "authDetails": {},
+    "endpoints": [
+      {
+        "path": "/health",
+        "method": "GET",
+        "summary": "",
+        "authType": "none"
+      },
+      {
+        "path": "/users",
+        "method": "GET",
+        "summary": "Get users",
+        "authType": "none"
+      },
+      {
+        "path": "/users",
+        "method": "POST",
+        "summary": "Create user (no summary field)",
+        "authType": "none"
+      }
+    ],
+    "lastUpdated": "2026-04-09T14:18:14.726167"
+  },
+  {
+    "id": "79817790-5653-4348-9027-767b0bd49b38",
+    "name": "Multi-Auth API",
+    "baseUrl": "https://api.example.com/v1",
+    "authType": "apiKey",
+    "authDetails": {
+      "type": "apiKey",
+      "name": "X-API-Key",
+      "in": "header",
+      "schemeName": "ApiKeyAuth"
+    },
+    "endpoints": [
+      {
+        "path": "/admin",
+        "method": "POST",
+        "summary": "Admin endpoint",
+        "authType": "apiKey"
+      },
+      {
+        "path": "/public",
+        "method": "GET",
+        "summary": "Public endpoint",
+        "authType": "none"
+      },
+      {
+        "path": "/users",
+        "method": "GET",
+        "summary": "Get users (uses global auth)",
+        "authType": "apiKey"
+      }
+    ],
+    "lastUpdated": "2026-04-09T14:18:14.747308"
+  },
+  {
+    "id": "3b764494-064f-4db3-8d5b-61068a46693b",
+    "name": "Public API",
+    "baseUrl": "https://public-api.example.com",
+    "authType": "none",
+    "authDetails": {},
+    "endpoints": [
+      {
+        "path": "/public",
+        "method": "GET",
+        "summary": "Public endpoint",
+        "authType": "none"
+      }
+    ],
+    "lastUpdated": "2026-04-09T14:18:14.765220"
+  },
+  {
+    "id": "611f2810-b9fc-490b-97d0-15627736c118",
+    "name": "Pet Store API",
+    "baseUrl": "https://petstore.example.com/api/v1",
+    "authType": "none",
+    "authDetails": {},
+    "endpoints": [
+      {
+        "path": "/categories",
+        "method": "GET",
+        "summary": "List categories",
+        "authType": "none"
+      },
+      {
+        "path": "/pets",
+        "method": "GET",
+        "summary": "List all pets",
+        "authType": "none"
+      },
+      {
+        "path": "/pets",
+        "method": "POST",
+        "summary": "Create a new pet",
+        "authType": "none"
+      },
+      {
+        "path": "/pets/search",
+        "method": "GET",
+        "summary": "Search pets",
+        "authType": "none"
+      },
+      {
+        "path": "/pets/{petId}",
+        "method": "DELETE",
+        "summary": "Delete pet",
+        "authType": "none"
+      },
+      {
+        "path": "/pets/{petId}",
+        "method": "GET",
+        "summary": "Get pet by ID",
+        "authType": "none"
+      },
+      {
+        "path": "/pets/{petId}",
+        "method": "PUT",
+        "summary": "Update pet",
+        "authType": "none"
+      }
+    ],
+    "lastUpdated": "2026-04-09T14:18:14.779107"
+  },
+  {
+    "id": "760a3b3f-0791-4dad-bff3-6018359ef519",
+    "name": "Petstore API",
+    "baseUrl": "https://petstore.swagger.io/v2",
+    "authType": "none",
+    "authDetails": {},
+    "endpoints": [
+      {
+        "path": "/pets",
+        "method": "GET",
+        "summary": "List all pets",
+        "authType": "none"
+      },
+      {
+        "path": "/pets",
+        "method": "POST",
+        "summary": "Create a pet",
+        "authType": "none"
+      },
+      {
+        "path": "/pets/{petId}",
+        "method": "DELETE",
+        "summary": "Delete pet",
+        "authType": "none"
+      },
+      {
+        "path": "/pets/{petId}",
+        "method": "GET",
+        "summary": "Get pet by ID",
+        "authType": "none"
+      },
+      {
+        "path": "/pets/{petId}",
+        "method": "PUT",
+        "summary": "Update pet",
+        "authType": "none"
+      }
+    ],
+    "lastUpdated": "2026-04-09T14:18:14.802987"
+  },
+  {
+    "id": "54d90b36-793e-47ee-b7ae-f1eef262dbe8",
+    "name": "Bearer Auth Test API",
+    "baseUrl": "https://api.example.com/v1",
+    "authType": "bearer",
+    "authDetails": {
+      "type": "http",
+      "scheme": "bearer",
+      "schemeName": "BearerAuth",
+      "bearerFormat": "JWT"
+    },
+    "endpoints": [
+      {
+        "path": "/admin",
+        "method": "POST",
+        "summary": "Admin endpoint (uses bearer)",
+        "authType": "bearer"
+      },
+      {
+        "path": "/public",
+        "method": "GET",
+        "summary": "Public endpoint",
+        "authType": "none"
+      },
+      {
+        "path": "/users",
+        "method": "GET",
+        "summary": "Get users (inherits bearer)",
+        "authType": "bearer"
+      }
+    ],
+    "lastUpdated": "2026-04-09T14:18:14.820174"
+  },
+  {
+    "id": "1b34a417-571d-485a-b5ae-78699924e2c2",
+    "name": "Pet Store API",
+    "baseUrl": "https://api.newpetstore.com/v2",
+    "authType": "none",
+    "authDetails": {},
+    "endpoints": [
+      {
+        "path": "/animals",
+        "method": "GET",
+        "summary": "List all animals",
+        "authType": "none"
+      }
+    ],
+    "lastUpdated": "2026-04-09T14:18:14.835425"
+  }
+]
