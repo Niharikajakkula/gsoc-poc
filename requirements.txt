@@ -1,0 +1,12 @@
+# API Explorer Pipeline Dependencies
+# Keep minimal - only essential libraries for GSoC project
+
+# YAML support for OpenAPI specs
+PyYAML>=6.0
+
+# Optional: For better error handling (already in Python stdlib)
+# json (built-in)
+# os (built-in)
+# sys (built-in)
+# uuid (built-in)
+# datetime (built-in)
