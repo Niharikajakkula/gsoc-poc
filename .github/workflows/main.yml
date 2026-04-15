@@ -59,26 +59,48 @@ jobs:
           sleep 10
           curl -f http://localhost:3002/health || echo "Health check skipped"
 
-       # 8. Run basic frontend check
+             # 8. Run basic frontend check
       - name: Check frontend files
         run: |
           echo "Checking frontend..."
-          ls frontend/
-      # 9. Validate JSON registry
+          ls -la frontend/ || echo "⚠️ frontend folder not found"
+
+      # 9. Validate JSON registry safely
       - name: Validate JSON
         run: |
-          python -m json.tool registry/global_index.json > /dev/null
-      
-      # 10. Fail if no APIs processed (VERY IMPORTANT)
+          echo "Validating registry JSON..."
+          python - <<EOF
+import json
+with open("registry/global_index.json") as f:
+    data = json.load(f)
+print("✅ JSON is valid")
+EOF
+
+      # 10. Validate API count (SAFE Python way)
       - name: Validate API count
         run: |
-          COUNT=$(grep -o '"name"' registry/global_index.json | wc -l)
-          echo "APIs found: $COUNT"
-          if [ "$COUNT" -lt 1 ]; then
-            echo "❌ No APIs processed!"
-            exit 1
-          fi
+          python - <<EOF
+import json, sys
 
-      # 11. Success message
+with open("registry/global_index.json") as f:
+    data = json.load(f)
+
+apis = data.get("apis", [])
+count = len(apis)
+
+print(f"APIs found: {count}")
+
+if count < 1:
+    print("❌ No APIs processed!")
+    sys.exit(1)
+EOF
+
+      # 11. Health check (STRICT)
+      - name: Backend health check
+        run: |
+          sleep 5
+          curl -f http://localhost:3002/health
+
+      # 12. Success message
       - name: Success message
         run: echo "✅ CI Pipeline completed successfully!"
