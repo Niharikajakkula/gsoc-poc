@@ -58,3 +58,27 @@ jobs:
           node simple-server.js &
           sleep 10
           curl -f http://localhost:3002/health || echo "Health check skipped"
+
+       # 8. Run basic frontend check
+      - name: Check frontend files
+        run: |
+          echo "Checking frontend..."
+          ls frontend/
+      # 9. Validate JSON registry
+      - name: Validate JSON
+        run: |
+          python -m json.tool registry/global_index.json > /dev/null
+      
+      # 10. Fail if no APIs processed (VERY IMPORTANT)
+      - name: Validate API count
+        run: |
+          COUNT=$(grep -o '"name"' registry/global_index.json | wc -l)
+          echo "APIs found: $COUNT"
+          if [ "$COUNT" -lt 1 ]; then
+            echo "❌ No APIs processed!"
+            exit 1
+          fi
+
+      # 11. Success message
+      - name: Success message
+        run: echo "✅ CI Pipeline completed successfully!"
