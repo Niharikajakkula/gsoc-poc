@@ -1,0 +1,60 @@
+name: API Explorer CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build-and-process:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout repo
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Setup Python
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      # 3. Install Python dependencies
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      # 4. Run batch processing pipeline
+      - name: Run API batch processor
+        run: |
+          python cli.py process-batch data/
+
+      # 5. Generate templates
+      - name: Generate API templates
+        run: |
+          python pipeline/template_generator.py
+
+      # 6. Verify registry output
+      - name: Verify registry files
+        run: |
+          echo "Checking registry contents..."
+          ls -R registry/
+
+      # 7. (Optional but impressive) Node check
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          npm install
+
+      - name: Check backend starts
+        run: |
+          cd backend
+          node simple-server.js &
+          sleep 5
+          curl http://localhost:3002/health || exit 1
