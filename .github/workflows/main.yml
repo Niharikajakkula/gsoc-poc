@@ -28,7 +28,7 @@ jobs:
       # 4. Run batch processing pipeline
       - name: Run API batch processor
         run: |
-          python cli.py process-batch data/
+          python pipeline/batch_processor.py data/
 
       # 5. Generate templates
       - name: Generate API templates
