@@ -1,0 +1,312 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "lastUpdated": "2026-04-19T14:58:09.097324",
+    "totalAPIs": 13,
+    "totalEndpoints": 40,
+    "generatedBy": "API Explorer Pipeline v1.0"
+  },
+  "apis": [
+    {
+      "id": "eabdaadb1a37",
+      "name": "Auth Examples API",
+      "baseUrl": "https://api.example.com/v1",
+      "authType": "apiKey",
+      "authDetails": {
+        "type": "apiKey",
+        "name": "X-API-Key",
+        "in": "header",
+        "schemeName": "ApiKeyAuth"
+      },
+      "endpointCount": 2,
+      "lastUpdated": "2026-04-19T14:58:08.514461",
+      "version": "1.0.0",
+      "description": "Auth Examples API - REST API with 2 endpoints",
+      "category": "Social",
+      "tags": [
+        "GET",
+        "Protected",
+        "Users"
+      ],
+      "rating": 3.9,
+      "reviews": []
+    },
+    {
+      "id": "19c49afe532c",
+      "name": "Endpoint Auth Test API",
+      "baseUrl": "https://api.example.com/v1",
+      "authType": "apiKey",
+      "authDetails": {
+        "type": "apiKey",
+        "name": "X-API-Key",
+        "in": "header",
+        "schemeName": "ApiKeyAuth"
+      },
+      "endpointCount": 4,
+      "lastUpdated": "2026-04-19T14:58:08.564580",
+      "version": "1.0.0",
+      "description": "Endpoint Auth Test API - REST API with 4 endpoints",
+      "category": "Social",
+      "tags": [
+        "Admin",
+        "GET",
+        "Health",
+        "POST",
+        "Public"
+      ],
+      "rating": 4.9,
+      "reviews": []
+    },
+    {
+      "id": "1c0ca8f21824",
+      "name": "Minimal API",
+      "baseUrl": "",
+      "authType": "none",
+      "authDetails": {},
+      "endpointCount": 3,
+      "lastUpdated": "2026-04-19T14:58:08.607501",
+      "version": "1.0.0",
+      "description": "Minimal API - REST API with 3 endpoints",
+      "category": "Social",
+      "tags": [
+        "GET",
+        "Health",
+        "POST",
+        "Users"
+      ],
+      "rating": 4.2,
+      "reviews": []
+    },
+    {
+      "id": "d676d7c575a9",
+      "name": "Multi-Auth API",
+      "baseUrl": "https://api.example.com/v1",
+      "authType": "apiKey",
+      "authDetails": {
+        "type": "apiKey",
+        "name": "X-API-Key",
+        "in": "header",
+        "schemeName": "ApiKeyAuth"
+      },
+      "endpointCount": 3,
+      "lastUpdated": "2026-04-19T14:58:08.659898",
+      "version": "1.0.0",
+      "description": "Multi-Auth API - REST API with 3 endpoints",
+      "category": "Social",
+      "tags": [
+        "Admin",
+        "GET",
+        "POST",
+        "Public",
+        "Users"
+      ],
+      "rating": 4.7,
+      "reviews": []
+    },
+    {
+      "id": "f893136697cd",
+      "name": "Public API",
+      "baseUrl": "https://public-api.example.com",
+      "authType": "none",
+      "authDetails": {},
+      "endpointCount": 1,
+      "lastUpdated": "2026-04-19T14:58:08.701060",
+      "version": "1.0.0",
+      "description": "Public API - REST API with 1 endpoints",
+      "category": "General",
+      "tags": [
+        "GET",
+        "Public"
+      ],
+      "rating": 4.3,
+      "reviews": []
+    },
+    {
+      "id": "048fb1a3bf14",
+      "name": "Pet Store API",
+      "baseUrl": "https://petstore.example.com/api/v1",
+      "authType": "none",
+      "authDetails": {},
+      "endpointCount": 7,
+      "lastUpdated": "2026-04-19T14:58:08.746812",
+      "version": "1.0.0",
+      "description": "A simple API for managing pets in a pet store",
+      "category": "General",
+      "tags": [
+        "Categories",
+        "DELETE",
+        "GET",
+        "POST",
+        "PUT"
+      ],
+      "rating": 4.2,
+      "reviews": []
+    },
+    {
+      "id": "524fe33fa136",
+      "name": "Petstore API",
+      "baseUrl": "https://petstore.swagger.io/v2",
+      "authType": "none",
+      "authDetails": {},
+      "endpointCount": 5,
+      "lastUpdated": "2026-04-19T14:58:08.798991",
+      "version": "1.0.0",
+      "description": "A sample API for testing YAML support",
+      "category": "General",
+      "tags": [
+        "DELETE",
+        "GET",
+        "POST",
+        "PUT",
+        "Pets"
+      ],
+      "rating": 3.7,
+      "reviews": []
+    },
+    {
+      "id": "6f7c887ecd63",
+      "name": "AI Language Model API",
+      "baseUrl": "https://api.openai.com/v1",
+      "authType": "bearer",
+      "authDetails": {
+        "type": "http",
+        "scheme": "bearer",
+        "schemeName": "BearerAuth"
+      },
+      "endpointCount": 2,
+      "lastUpdated": "2026-04-19T14:58:08.849022",
+      "version": "1.0.0",
+      "description": "Advanced artificial intelligence API for natural language processing, text generation, and machine learning tasks",
+      "category": "AI",
+      "tags": [
+        "Chat",
+        "Completions",
+        "GET",
+        "Models",
+        "POST"
+      ],
+      "rating": 4.4,
+      "reviews": []
+    },
+    {
+      "id": "46c171f99ca3",
+      "name": "Bearer Auth Test API",
+      "baseUrl": "https://api.example.com/v1",
+      "authType": "bearer",
+      "authDetails": {
+        "type": "http",
+        "scheme": "bearer",
+        "schemeName": "BearerAuth",
+        "bearerFormat": "JWT"
+      },
+      "endpointCount": 3,
+      "lastUpdated": "2026-04-19T14:58:08.897093",
+      "version": "1.0.0",
+      "description": "Bearer Auth Test API - REST API with 3 endpoints",
+      "category": "Social",
+      "tags": [
+        "Admin",
+        "GET",
+        "POST",
+        "Public",
+        "Users"
+      ],
+      "rating": 3.8,
+      "reviews": []
+    },
+    {
+      "id": "b30c75f6e9bc",
+      "name": "E-commerce Store API",
+      "baseUrl": "https://api.shopify.com/v1",
+      "authType": "apiKey",
+      "authDetails": {
+        "type": "apiKey",
+        "name": "X-Shop-Token",
+        "in": "header",
+        "schemeName": "ApiKeyAuth"
+      },
+      "endpointCount": 5,
+      "lastUpdated": "2026-04-19T14:58:08.940276",
+      "version": "1.0.0",
+      "description": "Complete shopping platform API for managing products, orders, cart, and payment processing",
+      "category": "Finance",
+      "tags": [
+        "Cart",
+        "GET",
+        "Orders",
+        "POST",
+        "Products"
+      ],
+      "rating": 3.5,
+      "reviews": []
+    },
+    {
+      "id": "433fe5dfe7dd",
+      "name": "Pet Store API",
+      "baseUrl": "https://api.newpetstore.com/v2",
+      "authType": "none",
+      "authDetails": {},
+      "endpointCount": 1,
+      "lastUpdated": "2026-04-19T14:58:08.980833",
+      "version": "1.0.0",
+      "description": "Same name but different base URL",
+      "category": "General",
+      "tags": [
+        "Animals",
+        "GET"
+      ],
+      "rating": 4.2,
+      "reviews": []
+    },
+    {
+      "id": "0e1d358dbd5f",
+      "name": "Weather Forecast API",
+      "baseUrl": "https://api.weather.com/v1",
+      "authType": "apiKey",
+      "authDetails": {
+        "type": "apiKey",
+        "name": "X-API-Key",
+        "in": "header",
+        "schemeName": "ApiKeyAuth"
+      },
+      "endpointCount": 2,
+      "lastUpdated": "2026-04-19T14:58:09.037699",
+      "version": "1.0.0",
+      "description": "Get current weather conditions, forecasts, and climate data for any location worldwide",
+      "category": "Weather",
+      "tags": [
+        "Current",
+        "Forecast",
+        "GET",
+        "Weather"
+      ],
+      "rating": 3.8,
+      "reviews": []
+    },
+    {
+      "id": "cdfce1b600c4",
+      "name": "AI Chat API",
+      "baseUrl": "https://api.openai.com/v1",
+      "authType": "bearer",
+      "authDetails": {
+        "type": "http",
+        "scheme": "bearer",
+        "schemeName": "BearerAuth"
+      },
+      "endpointCount": 2,
+      "lastUpdated": "2026-04-19T14:58:09.095395",
+      "version": "1.0.0",
+      "description": "Advanced AI language model API for chat completions and natural language processing",
+      "category": "AI",
+      "tags": [
+        "Chat",
+        "Completions",
+        "GET",
+        "Models",
+        "POST"
+      ],
+      "rating": 4.4,
+      "reviews": []
+    }
+  ]
+}

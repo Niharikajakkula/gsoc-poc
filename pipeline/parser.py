@@ -1,15 +1,7 @@
 #!/usr/bin/env python3
 """
 API Explorer Pipeline - Enhanced OpenAPI Parser
-A robust Python script to parse OpenAPI JSON and YAML files and manage API registry with duplicate prevention.
-
-Features:
-- Supports both JSON and YAML OpenAPI specs
-- Prevents duplicate APIs (same name + baseUrl)
-- Normalizes data (uppercase methods, clean summaries)
-- Handles missing fields gracefully
-- Provides detailed console output
-- Sorts endpoints alphabetically
+A robust Python script to parse OpenAPI JSON and YAML files with modular registry management.
 """
 
 import json
@@ -17,6 +9,11 @@ import os
 import sys
 import uuid
 from datetime import datetime
+from pathlib import Path
+
+# Import registry manager
+sys.path.append(str(Path(__file__).parent))
+from registry_manager import RegistryManager
 
 # Import YAML support with fallback
 try:
@@ -29,21 +26,60 @@ except ImportError:
 
 # Handle Windows console encoding issues
 if sys.platform == "win32":
-    import codecs
-    sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
-    sys.stderr = codecs.getwriter("utf-8")(sys.stderr.detach())
+    try:
+        import codecs
+        sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+        sys.stderr = codecs.getwriter("utf-8")(sys.stderr.detach())
+    except:
+        pass
+
+
+def categorize_api_simple(api_name, description, endpoints):
+    """Simple keyword-based categorization for demo"""
+    text = f"{api_name} {description}".lower()
+    
+    # Add endpoint paths
+    for endpoint in endpoints:
+        if 'path' in endpoint:
+            text += f" {endpoint['path']}"
+        if 'summary' in endpoint:
+            text += f" {endpoint['summary']}"
+    
+    # Simple keyword matching
+    if any(word in text for word in ['ai', 'gpt', 'language', 'chat', 'model']):
+        return 'AI'
+    elif any(word in text for word in ['weather', 'forecast', 'climate']):
+        return 'Weather'  
+    elif any(word in text for word in ['user', 'profile', 'social', 'friend']):
+        return 'Social'
+    elif any(word in text for word in ['payment', 'finance', 'bank', 'money']):
+        return 'Finance'
+    else:
+        return 'General'
+
+
+def extract_tags_simple(api_name, endpoints):
+    """Extract simple tags for demo"""
+    tags = set()
+    
+    # Add HTTP methods
+    for endpoint in endpoints:
+        if 'method' in endpoint:
+            tags.add(endpoint['method'])
+    
+    # Add path segments
+    for endpoint in endpoints:
+        if 'path' in endpoint:
+            parts = endpoint['path'].strip('/').split('/')
+            for part in parts:
+                if part and not part.startswith('{') and len(part) > 2:
+                    tags.add(part.capitalize())
+    
+    return sorted(list(tags))[:5]  # Limit to 5 tags
 
 
 def load_openapi_file(file_path):
-    """
-    Load and validate an OpenAPI JSON or YAML file.
-    
-    Args:
-        file_path (str): Path to the OpenAPI JSON/YAML file
-        
-    Returns:
-        dict or None: OpenAPI data if successful, None if failed
-    """
+    """Load and validate an OpenAPI JSON or YAML file."""
     try:
         print(f"[LOAD] Loading OpenAPI file: {file_path}")
         
@@ -75,11 +111,6 @@ def load_openapi_file(file_path):
             print("[ERROR] OpenAPI file missing 'info' section")
             return None
             
-        # Check OpenAPI version (optional but good practice)
-        openapi_version = openapi_data.get('openapi') or openapi_data.get('swagger')
-        if openapi_version:
-            print(f"[LOAD] OpenAPI version: {openapi_version}")
-            
         return openapi_data
         
     except FileNotFoundError:
@@ -88,25 +119,13 @@ def load_openapi_file(file_path):
     except json.JSONDecodeError as e:
         print(f"[ERROR] Invalid JSON format - {e}")
         return None
-    except yaml.YAMLError as e:
-        print(f"[ERROR] Invalid YAML format - {e}")
-        return None
     except Exception as e:
         print(f"[ERROR] Failed to load OpenAPI file - {e}")
         return None
 
 
 def extract_auth(openapi_data, endpoint_security=None):
-    """
-    Extract authentication information from OpenAPI specification with priority-based selection.
-    
-    Args:
-        openapi_data (dict): Raw OpenAPI data
-        endpoint_security (list, optional): Endpoint-specific security requirements
-        
-    Returns:
-        dict: Authentication details with authType and authDetails
-    """
+    """Extract authentication information from OpenAPI specification."""
     try:
         print("[AUTH] Extracting authentication information...")
         
@@ -172,7 +191,6 @@ def extract_auth(openapi_data, endpoint_security=None):
                     'schemeName': selected_name
                 }
             }
-            print(f"[AUTH] API Key auth: {auth_result['authDetails']['name']} in {auth_result['authDetails']['in']}")
             
         elif auth_type == 'http':
             # HTTP authentication (Bearer, Basic, etc.)
@@ -197,8 +215,6 @@ def extract_auth(openapi_data, endpoint_security=None):
             if scheme == 'bearer' and 'bearerFormat' in selected_scheme:
                 auth_result['authDetails']['bearerFormat'] = selected_scheme['bearerFormat']
             
-            print(f"[AUTH] HTTP auth: {scheme} (normalized to: {normalized_auth_type})")
-            
         elif auth_type == 'oauth2':
             # OAuth2 authentication (basic extraction)
             flows = selected_scheme.get('flows', {})
@@ -220,11 +236,6 @@ def extract_auth(openapi_data, endpoint_security=None):
                     auth_result['authDetails']['authorizationUrl'] = first_flow['authorizationUrl']
                 if 'tokenUrl' in first_flow:
                     auth_result['authDetails']['tokenUrl'] = first_flow['tokenUrl']
-            
-            print(f"[AUTH] OAuth2 auth: flows {flow_types}")
-            
-        else:
-            print(f"[AUTH] Unsupported auth type: {auth_type}, using 'none'")
         
         return auth_result
         
@@ -236,86 +247,12 @@ def extract_auth(openapi_data, endpoint_security=None):
         }
 
 
-def extract_endpoint_auth(openapi_data, endpoint_security):
-    """
-    Extract endpoint-specific authentication with proper normalization.
-    
-    Args:
-        openapi_data (dict): Raw OpenAPI data
-        endpoint_security (list): Endpoint security requirements
-        
-    Returns:
-        str: Normalized auth type for this endpoint or None if should use global
-    """
-    try:
-        # CRITICAL: Check if endpoint_security exists (not None)
-        if endpoint_security is None:
-            return None  # No endpoint security defined, inherit global
-        
-        # CRITICAL: If security is empty list [], it means NO AUTH (public endpoint)
-        if isinstance(endpoint_security, list) and len(endpoint_security) == 0:
-            return 'none'  # Explicitly public endpoint
-        
-        if not isinstance(endpoint_security, list) or len(endpoint_security) == 0:
-            return None
-        
-        # Get security schemes for reference
-        components = openapi_data.get('components', {})
-        security_schemes = components.get('securitySchemes', {})
-        
-        if not security_schemes:
-            return None
-        
-        # Check first security requirement
-        first_requirement = endpoint_security[0] if endpoint_security else {}
-        
-        if not first_requirement:
-            return 'none'  # Empty requirement = no auth
-        
-        # Get the scheme name from the requirement
-        scheme_name = list(first_requirement.keys())[0] if first_requirement else None
-        
-        if scheme_name and scheme_name in security_schemes:
-            scheme_data = security_schemes[scheme_name]
-            scheme_type = scheme_data.get('type', '').lower()
-            
-            # NORMALIZE auth types consistently with main extraction
-            if scheme_type == 'apikey':
-                return 'apiKey'
-            elif scheme_type == 'http':
-                # CRITICAL: Check if it's bearer specifically for normalization
-                http_scheme = scheme_data.get('scheme', 'bearer').lower()
-                if http_scheme == 'bearer':
-                    return 'bearer'  # Normalize http+bearer to "bearer"
-                else:
-                    return 'http'    # Keep other http schemes as "http"
-            elif scheme_type == 'oauth2':
-                return 'oauth2'
-        
-        return None
-        
-    except Exception as e:
-        print(f"[WARN] Failed to extract endpoint auth - {e}")
-        return None
-
-
 def parse_openapi(openapi_data):
-    """
-    Parse OpenAPI data and extract structured API information.
-    
-    Args:
-        openapi_data (dict): Raw OpenAPI data
-        
-    Returns:
-        dict or None: Structured API data if successful, None if failed
-    """
+    """Parse OpenAPI data and extract structured API information."""
     try:
         # Extract API name from info.title
         info = openapi_data.get('info', {})
         api_name = info.get('title', 'Unknown API').strip()
-        
-        if not api_name or api_name == 'Unknown API':
-            print("[WARN] API name is missing or empty")
         
         # Extract base URL from servers[0].url (handle missing servers)
         servers = openapi_data.get('servers', [])
@@ -333,7 +270,7 @@ def parse_openapi(openapi_data):
         
         print(f"[PARSE] Processing {len(paths)} path(s)...")
         
-        # Extract authentication information FIRST (needed for endpoint inheritance)
+        # Extract authentication information FIRST
         auth_info = extract_auth(openapi_data)
         global_auth_type = auth_info['authType']
         
@@ -343,7 +280,7 @@ def parse_openapi(openapi_data):
                 
             # Handle multiple HTTP methods under one path
             for method, method_data in path_data.items():
-                # Skip non-HTTP method keys (like parameters, summary, etc.)
+                # Skip non-HTTP method keys
                 method_upper = method.upper()
                 if method_upper not in ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS']:
                     continue
@@ -351,45 +288,26 @@ def parse_openapi(openapi_data):
                 if not isinstance(method_data, dict):
                     continue
                 
-                # Extract summary/description (handle missing summary)
+                # Extract summary/description
                 summary = method_data.get('summary', '').strip()
                 if not summary:
                     summary = method_data.get('description', '').strip()
                 
-                # Ensure summary is a string (not None or other types)
                 if not isinstance(summary, str):
                     summary = ''
-                
-                # Check for endpoint-specific authentication with proper logic order
-                endpoint_security = method_data.get('security')
-                endpoint_auth_type = extract_endpoint_auth(openapi_data, endpoint_security)
-                
-                # CRITICAL FIX: Apply correct logic order for auth inheritance
-                if endpoint_security is not None and isinstance(endpoint_security, list) and len(endpoint_security) == 0:
-                    # Case 1: security: [] → Public endpoint (NO AUTH)
-                    final_auth_type = 'none'
-                    print(f"[AUTH] Endpoint {method_upper} {path} is public (security: [])")
-                elif endpoint_auth_type is not None:
-                    # Case 2: Endpoint has specific security → Use extracted auth
-                    final_auth_type = endpoint_auth_type
-                    print(f"[AUTH] Endpoint {method_upper} {path} has specific auth: {endpoint_auth_type}")
-                else:
-                    # Case 3: No endpoint security defined → Inherit global auth
-                    final_auth_type = global_auth_type
-                    print(f"[AUTH] Endpoint {method_upper} {path} inherits global auth: {global_auth_type}")
                 
                 endpoint = {
                     'path': path.strip(),
                     'method': method_upper,
                     'summary': summary,
-                    'authType': final_auth_type  # ALWAYS include normalized authType
+                    'authType': global_auth_type  # Use global auth for simplicity
                 }
                 
                 endpoints.append(endpoint)
         
-        # Create structured output (auth_info already extracted above)
+        # Create structured output
         api_data = {
-            'id': str(uuid.uuid4()),  # Unique ID for each API
+            'id': str(uuid.uuid4()),
             'name': api_name,
             'baseUrl': base_url,
             'authType': auth_info['authType'],
@@ -398,8 +316,19 @@ def parse_openapi(openapi_data):
             'lastUpdated': datetime.now().isoformat()
         }
         
+        # Add enrichment data
+        description = info.get('description', '')
+        if not description:
+            description = f"{api_name} - REST API with {len(endpoints)} endpoints"
+        
+        api_data['description'] = description
+        api_data['category'] = categorize_api_simple(api_name, description, endpoints)
+        api_data['tags'] = extract_tags_simple(api_name, endpoints)
+        api_data['rating'] = round(3.5 + (hash(api_name) % 15) / 10, 1)  # Demo rating
+        
         print(f"[PARSE] Parsed API: {api_name}")
-        print(f"[PARSE] Base URL: {base_url or 'Not specified'}")
+        print(f"[PARSE] Category: {api_data['category']}")
+        print(f"[PARSE] Tags: {', '.join(api_data['tags'])}")
         print(f"[PARSE] Found {len(endpoints)} endpoint(s)")
         
         return api_data
@@ -410,15 +339,7 @@ def parse_openapi(openapi_data):
 
 
 def normalize_data(api_data):
-    """
-    Clean and normalize API data, ensuring all required fields exist.
-    
-    Args:
-        api_data (dict): Raw API data
-        
-    Returns:
-        dict: Normalized API data with guaranteed auth fields
-    """
+    """Clean and normalize API data, ensuring all required fields exist."""
     try:
         print("[NORM] Normalizing data...")
         
@@ -427,13 +348,23 @@ def normalize_data(api_data):
             'id': api_data.get('id', str(uuid.uuid4())),
             'name': str(api_data.get('name', 'Unknown API')).strip(),
             'baseUrl': str(api_data.get('baseUrl', '')).strip(),
-            'authType': api_data.get('authType', 'none'),  # Always ensure authType exists
-            'authDetails': api_data.get('authDetails', {}),  # Always ensure authDetails exists
+            'authType': api_data.get('authType', 'none'),
+            'authDetails': api_data.get('authDetails', {}),
             'endpoints': [],
-            'lastUpdated': api_data.get('lastUpdated', datetime.now().isoformat())
+            'lastUpdated': api_data.get('lastUpdated', datetime.now().isoformat()),
+            # CRITICAL: Preserve enriched fields from parser
+            'description': api_data.get('description', ''),
+            'category': api_data.get('category', 'General'),
+            'tags': api_data.get('tags', []),
+            'rating': api_data.get('rating', 4.0),
+            'reviews': api_data.get('reviews', []),
+            'version': api_data.get('version', '1.0.0')
         }
         
-        # Validate authType - ensure it's a valid value
+        # Debug: Show what enriched data we're preserving
+        print(f"[NORM] Preserving enriched data: category={normalized['category']}, tags={normalized['tags']}")
+        
+        # Validate authType
         valid_auth_types = ['none', 'apiKey', 'http', 'bearer', 'oauth2']
         if normalized['authType'] not in valid_auth_types:
             print(f"[NORM] Invalid authType '{normalized['authType']}', defaulting to 'none'")
@@ -451,12 +382,11 @@ def normalize_data(api_data):
             if not isinstance(endpoint, dict):
                 continue
                 
-            # CRITICAL FIX: Always include authType for every endpoint
             normalized_endpoint = {
                 'path': str(endpoint.get('path', '')).strip(),
                 'method': str(endpoint.get('method', 'GET')).upper(),
                 'summary': str(endpoint.get('summary', '')).strip(),
-                'authType': endpoint.get('authType', normalized['authType'])  # Inherit global if missing
+                'authType': endpoint.get('authType', normalized['authType'])
             }
             
             # Validate endpoint authType
@@ -486,145 +416,33 @@ def normalize_data(api_data):
             'authType': 'none',
             'authDetails': {},
             'endpoints': [],
-            'lastUpdated': datetime.now().isoformat()
+            'lastUpdated': datetime.now().isoformat(),
+            # Include enrichment defaults even in error case
+            'description': '',
+            'category': 'General',
+            'tags': [],
+            'rating': 4.0,
+            'reviews': [],
+            'version': '1.0.0'
         }
 
 
-def load_registry(registry_path):
-    """
-    Load existing registry or create empty one, ensuring all APIs have auth fields.
-    
-    Args:
-        registry_path (str): Path to registry file
-        
-    Returns:
-        list: Registry data with normalized auth fields
-    """
+def save_to_registry(api_data, registry_path=None, openapi_data=None):
+    """Save API data to modular registry system."""
     try:
-        if os.path.exists(registry_path):
-            print(f"[REG] Loading existing registry: {registry_path}")
-            with open(registry_path, 'r', encoding='utf-8') as file:
-                registry = json.load(file)
-            
-            if not isinstance(registry, list):
-                print("[WARN] Registry file format invalid, creating new registry")
-                return []
-            
-            # CRITICAL FIX: Ensure ALL APIs have auth fields before any processing
-            fixed_count = 0
-            for api in registry:
-                if isinstance(api, dict):
-                    # Force auth fields to exist with safe defaults
-                    if 'authType' not in api or api['authType'] is None:
-                        api['authType'] = 'none'
-                        fixed_count += 1
-                    if 'authDetails' not in api or not isinstance(api['authDetails'], dict):
-                        api['authDetails'] = {}
-                        fixed_count += 1
-                    
-                    # Fix endpoints missing authType (inherit from global)
-                    global_auth = api.get('authType', 'none')
-                    endpoints = api.get('endpoints', [])
-                    for endpoint in endpoints:
-                        if isinstance(endpoint, dict) and 'authType' not in endpoint:
-                            endpoint['authType'] = global_auth
-                            fixed_count += 1
-            
-            if fixed_count > 0:
-                print(f"[REG] Fixed {fixed_count} missing auth field(s) in existing APIs")
-                # Save the fixed registry immediately
-                try:
-                    with open(registry_path, 'w', encoding='utf-8') as file:
-                        json.dump(registry, file, indent=2, ensure_ascii=False)
-                    print(f"[REG] Saved fixed registry to {registry_path}")
-                except Exception as e:
-                    print(f"[WARN] Could not save fixed registry: {e}")
-            
-            print(f"[REG] Found {len(registry)} existing API(s) in registry")
-            return registry
-        else:
-            print(f"[REG] Creating new registry: {registry_path}")
-            return []
-            
-    except json.JSONDecodeError as e:
-        print(f"[WARN] Registry file corrupted ({e}), creating new registry")
-        return []
-    except Exception as e:
-        print(f"[WARN] Failed to load registry ({e}), creating new registry")
-        return []
-
-
-def find_existing_api(registry, api_name, base_url):
-    """
-    Find existing API in registry by name and baseUrl.
-    
-    Args:
-        registry (list): Current registry
-        api_name (str): API name to search for
-        base_url (str): Base URL to search for
+        print("[REGISTRY] Saving to modular registry system...")
         
-    Returns:
-        int or None: Index of existing API, None if not found
-    """
-    for i, existing_api in enumerate(registry):
-        if not isinstance(existing_api, dict):
-            continue
-            
-        existing_name = existing_api.get('name', '').strip()
-        existing_base_url = existing_api.get('baseUrl', '').strip()
+        # Create registry manager
+        manager = RegistryManager()
         
-        if existing_name == api_name and existing_base_url == base_url:
-            return i
-    
-    return None
-
-
-def save_to_registry(api_data, registry_path):
-    """
-    Save API data to registry, handling duplicates intelligently.
-    
-    Args:
-        api_data (dict): Normalized API data
-        registry_path (str): Path to registry file
+        # Add or update API
+        api_id, operation = manager.add_or_update_api(api_data, openapi_data)
         
-    Returns:
-        tuple: (success: bool, operation: str)
-    """
-    try:
-        # Create registry directory if it doesn't exist
-        os.makedirs(os.path.dirname(registry_path), exist_ok=True)
+        print(f"[REGISTRY] {operation} API: {api_data['name']} (ID: {api_id})")
         
-        # Load existing registry
-        registry = load_registry(registry_path)
-        
-        # Check for existing API
-        api_name = api_data['name']
-        base_url = api_data['baseUrl']
-        existing_index = find_existing_api(registry, api_name, base_url)
-        
-        if existing_index is not None:
-            # Update existing API
-            print(f"[UPDATE] Updating existing API: {api_name}")
-            
-            # Keep the original ID but update other fields
-            original_id = registry[existing_index].get('id')
-            if original_id:
-                api_data['id'] = original_id
-            
-            registry[existing_index] = api_data
-            operation = "Updated"
-        else:
-            # Add new API
-            print(f"[ADD] Adding new API: {api_name}")
-            registry.append(api_data)
-            operation = "Added"
-        
-        # Save updated registry
-        with open(registry_path, 'w', encoding='utf-8') as file:
-            json.dump(registry, file, indent=2, ensure_ascii=False)
-        
-        print(f"[SAVE] {operation} API in registry: {registry_path}")
-        print(f"[SAVE] Total APIs in registry: {len(registry)}")
+        # Get updated statistics
+        stats = manager.get_registry_stats()
+        print(f"[REGISTRY] Total APIs: {stats['totalAPIs']}, Total Endpoints: {stats['totalEndpoints']}")
         
         return True, operation
         
@@ -633,81 +451,16 @@ def save_to_registry(api_data, registry_path):
         return False, "Failed"
 
 
-def display_summary(api_data, operation_type):
-    """
-    Display a summary of the parsed API.
-    
-    Args:
-        api_data (dict): API data
-        operation_type (str): "Added" or "Updated"
-    """
-    print(f"\n[SUMMARY] API {operation_type} Successfully:")
-    print(f"   ID: {api_data.get('id', 'N/A')}")
-    print(f"   Name: {api_data['name']}")
-    print(f"   Base URL: {api_data['baseUrl'] or 'Not specified'}")
-    print(f"   Auth Type: {api_data.get('authType', 'none')}")
-    
-    # Display auth details if present
-    auth_details = api_data.get('authDetails', {})
-    if auth_details:
-        if api_data.get('authType') == 'apiKey':
-            print(f"   Auth Details: {auth_details.get('name', 'N/A')} in {auth_details.get('in', 'N/A')}")
-        elif api_data.get('authType') == 'http':
-            print(f"   Auth Details: {auth_details.get('scheme', 'N/A')} scheme")
-        elif api_data.get('authType') == 'oauth2':
-            flows = auth_details.get('flows', [])
-            print(f"   Auth Details: OAuth2 flows {flows}")
-    
-    print(f"   Endpoints: {len(api_data['endpoints'])}")
-    print(f"   Last Updated: {api_data.get('lastUpdated', 'N/A')}")
-    
-    if api_data['endpoints']:
-        print(f"\n[ENDPOINTS] Showing first 5:")
-        for i, endpoint in enumerate(api_data['endpoints'][:5]):
-            summary_text = f" - {endpoint['summary']}" if endpoint['summary'] else ""
-            print(f"   {i+1}. {endpoint['method']} {endpoint['path']}{summary_text}")
-        
-        if len(api_data['endpoints']) > 5:
-            print(f"   ... and {len(api_data['endpoints']) - 5} more endpoint(s)")
-
-
-def main():
-    """
-    Main function to run the enhanced OpenAPI parser.
-    """
-    print("API Explorer Pipeline - Enhanced OpenAPI Parser")
-    print("=" * 60)
-    print("Features: JSON/YAML support, duplicate prevention, data normalization")
+if __name__ == "__main__":
+    print("API Explorer Pipeline - Enhanced OpenAPI Parser v2.0")
     print("=" * 60)
     
     # Check command line arguments
     if len(sys.argv) != 2:
-        print("\n[ERROR] Usage Error:")
-        print("   python parser.py <openapi_file>")
-        print("\n[SUPPORTED FORMATS]")
-        print("   JSON: .json files")
-        print("   YAML: .yaml, .yml files")
-        print("\n[EXAMPLES]")
-        print("   python parser.py data/sample_openapi.json")
-        print("   python parser.py data/petstore.yaml")
-        print("   python parser.py data/minimal_openapi.json")
+        print("\n[ERROR] Usage: python parser.py <openapi_file>")
         sys.exit(1)
     
     input_file = sys.argv[1]
-    output_file = "registry/apis.json"
-    
-    # Validate file extension
-    file_ext = os.path.splitext(input_file)[1].lower()
-    supported_extensions = ['.json', '.yaml', '.yml']
-    
-    if file_ext not in supported_extensions:
-        print(f"\n[ERROR] Unsupported file format: {file_ext}")
-        print(f"[SUPPORTED] {', '.join(supported_extensions)}")
-        sys.exit(1)
-    
-    print(f"\n[INPUT] Input file: {input_file}")
-    print(f"[OUTPUT] Output file: {output_file}")
-    print()
     
     # Step 1: Load OpenAPI file
     openapi_data = load_openapi_file(input_file)
@@ -724,18 +477,15 @@ def main():
     # Step 3: Normalize data
     normalized_data = normalize_data(api_data)
     
-    # Step 4: Save to registry
-    success, operation = save_to_registry(normalized_data, output_file)
+    # Step 4: Save to modular registry
+    success, operation = save_to_registry(normalized_data, None, openapi_data)
     
     if success:
         print("\n[SUCCESS] Pipeline completed successfully!")
-        
-        # Display summary
-        display_summary(normalized_data, operation)
+        print(f"API: {normalized_data['name']}")
+        print(f"Category: {normalized_data['category']}")
+        print(f"Tags: {', '.join(normalized_data['tags'])}")
+        print(f"Endpoints: {len(normalized_data['endpoints'])}")
     else:
         print("\n[FAIL] Pipeline failed at saving stage!")
         sys.exit(1)
-
-
-if __name__ == "__main__":
-    main()
