@@ -297,8 +297,13 @@ curl -X POST http://localhost:3002/agent/tools/execute \
 ```
 
 ---
+<<<<<<< HEAD
 
 ## 📊 Features & Capabilities
+=======
+ 
+**Transforming API documentation from static to interactive**
+>>>>>>> a1983a4cf804b643fab4802c6791d89764c83422
 
 ### **Natural Language Processing**
 - Intent recognition (create → POST, get → GET, update → PUT, delete → DELETE)
@@ -319,6 +324,7 @@ curl -X POST http://localhost:3002/agent/tools/execute \
 - 📱 **Social**: User management, social APIs
 - 📋 **General**: Miscellaneous APIs
 
+<<<<<<< HEAD
 ### **Authentication Support**
 - No Auth (Public APIs)
 - API Key (Header-based)
@@ -548,3 +554,10 @@ If you find this project useful, please consider giving it a star! ⭐
 **Built with ❤️ for the developer community and AI agents**
 
 **Ready to transform how you discover and use APIs!** 🚀
+=======
+### Languages
+- **Python**: 45.2% (Pipeline processing)
+- **JavaScript**: 32.1% (Frontend + Backend)
+- **HTML/CSS**: 18.4% (UI styling)
+- **Shell**: 4.3% (Automation scripts)
+>>>>>>> a1983a4cf804b643fab4802c6791d89764c83422
