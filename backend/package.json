@@ -5,28 +5,13 @@
   "main": "simple-server.js",
   "scripts": {
     "start": "node simple-server.js",
-    "start:server": "node server.js",
-    "start:simple": "node simple-server.js",
-    "dev": "node simple-server.js",
-    "dev:watch": "nodemon simple-server.js"
+    "dev": "nodemon simple-server.js"
   },
-  "keywords": [
-    "api",
-    "explorer",
-    "openapi",
-    "rest",
-    "gsoc"
-  ],
-  "author": "GSoC 2026 PoC",
-  "license": "MIT",
   "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^4.18.2"
+    "cors": "^2.8.6",
+    "express": "^4.22.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
-  },
-  "engines": {
-    "node": ">=18.0.0"
   }
 }
