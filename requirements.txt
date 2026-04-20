@@ -1,5 +1,5 @@
 # API Explorer Pipeline Dependencies
-# Keep minimal - only essential libraries for GSoC project
+# Keep minimal - only essential libraries for production use
 
 # YAML support for OpenAPI specs
 PyYAML>=6.0

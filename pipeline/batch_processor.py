@@ -20,11 +20,12 @@ from datetime import datetime
 
 # Import existing modules
 try:
-    from parser import load_openapi_file, parse_openapi, normalize_data, save_to_registry
-    from template_generator import generate_templates_for_registry, load_registry, save_registry
+    from parser import load_openapi_file, parse_openapi, normalize_data
+    from template_generator import generate_templates
+    from registry_manager import RegistryManager
 except ImportError as e:
     print(f"[ERROR] Failed to import required modules: {e}")
-    print("[FIX] Ensure parser.py and template_generator.py are in the same directory")
+    print("[FIX] Ensure parser.py, template_generator.py, and registry_manager.py are in the same directory")
     sys.exit(1)
 
 # Handle Windows console encoding issues
@@ -94,13 +95,13 @@ def find_openapi_files(folder_path, recursive=False):
         return []
 
 
-def process_single_file(file_path, registry_path):
+def process_single_file(file_path, registry_manager):
     """
-    Process a single OpenAPI file using existing parser logic.
+    Process a single OpenAPI file using the new modular registry system.
     
     Args:
         file_path (str): Path to OpenAPI file
-        registry_path (str): Path to registry file
+        registry_manager (RegistryManager): Registry manager instance
         
     Returns:
         tuple: (success: bool, error_message: str or None)
@@ -121,64 +122,77 @@ def process_single_file(file_path, registry_path):
         # Step 3: Normalize data (reuse existing function)
         normalized_data = normalize_data(api_data)
         
-        # Step 4: Save to registry (reuse existing function)
-        success, operation = save_to_registry(normalized_data, registry_path)
+        # Step 4: Generate templates for endpoints
+        endpoints_with_templates = []
+        for endpoint in normalized_data.get('endpoints', []):
+            # Generate templates using existing function
+            templates = generate_templates(endpoint, normalized_data)
+            endpoint['templates'] = templates
+            endpoints_with_templates.append(endpoint)
         
-        if success:
-            api_name = normalized_data.get('name', 'Unknown API')
-            endpoint_count = len(normalized_data.get('endpoints', []))
-            print(f"[SUCCESS] {operation} API: {api_name} ({endpoint_count} endpoints)")
-            return True, None
-        else:
-            return False, "Failed to save to registry"
+        # Update normalized data with templates
+        normalized_data['endpoints'] = endpoints_with_templates
+        
+        # Step 5: Save to modular registry
+        api_id, operation = registry_manager.add_or_update_api(normalized_data, openapi_data)
+        
+        api_name = normalized_data.get('name', 'Unknown API')
+        endpoint_count = len(normalized_data.get('endpoints', []))
+        print(f"[SUCCESS] {operation} API: {api_name} ({endpoint_count} endpoints) -> {api_id}")
+        return True, None
         
     except Exception as e:
         return False, str(e)
 
 
-def clear_registry(registry_path):
+def clear_registry(registry_manager):
     """
-    Clear the existing registry by creating an empty one.
+    Clear the existing registry by migrating old data and starting fresh.
     
     Args:
-        registry_path (str): Path to registry file
+        registry_manager (RegistryManager): Registry manager instance
         
     Returns:
         bool: True if successful, False otherwise
     """
     try:
-        print(f"[BATCH] Clearing existing registry: {registry_path}")
+        print(f"[BATCH] Clearing existing registry...")
         
-        # Create backup if registry exists
-        if os.path.exists(registry_path):
-            backup_path = f"{registry_path}.backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        # Create backup of old registry if it exists
+        old_registry_file = "registry/apis.json"
+        if os.path.exists(old_registry_file):
+            backup_path = f"{old_registry_file}.backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}"
             import shutil
-            shutil.copy2(registry_path, backup_path)
+            shutil.copy2(old_registry_file, backup_path)
             print(f"[BATCH] Created backup: {backup_path}")
         
-        # Create empty registry
-        empty_registry = []
-        success = save_registry(empty_registry, registry_path)
+        # Clear modular registry by creating fresh files
+        empty_global_index = {
+            "metadata": {
+                "version": "1.0.0",
+                "lastUpdated": datetime.now().isoformat(),
+                "totalAPIs": 0,
+                "totalEndpoints": 0,
+                "generatedBy": "API Explorer Pipeline v1.0"
+            },
+            "apis": []
+        }
         
-        if success:
-            print(f"[BATCH] Registry cleared successfully")
-            return True
-        else:
-            print(f"[ERROR] Failed to clear registry")
-            return False
+        registry_manager.save_global_index(empty_global_index)
+        print(f"[BATCH] Registry cleared successfully")
+        return True
         
     except Exception as e:
         print(f"[ERROR] Failed to clear registry: {e}")
         return False
 
 
-def process_batch(folder_path, registry_path, recursive=False, clear_first=False):
+def process_batch(folder_path, recursive=False, clear_first=False):
     """
-    Process multiple OpenAPI files in batch.
+    Process multiple OpenAPI files in batch using the modular registry system.
     
     Args:
         folder_path (str): Path to folder containing OpenAPI files
-        registry_path (str): Path to registry file
         recursive (bool): Whether to scan subfolders recursively
         clear_first (bool): Whether to clear registry before processing
         
@@ -193,17 +207,19 @@ def process_batch(folder_path, registry_path, recursive=False, clear_first=False
     }
     
     try:
-        print("API Explorer Pipeline - Batch Processor")
+        print("API Explorer Pipeline - Batch Processor (Modular Registry)")
         print("=" * 60)
         print(f"Folder: {folder_path}")
-        print(f"Registry: {registry_path}")
         print(f"Recursive: {recursive}")
         print(f"Clear first: {clear_first}")
         print("=" * 60)
         
+        # Initialize registry manager
+        registry_manager = RegistryManager()
+        
         # Clear registry if requested
         if clear_first:
-            if not clear_registry(registry_path):
+            if not clear_registry(registry_manager):
                 print("[ERROR] Failed to clear registry, aborting batch processing")
                 return stats
         
@@ -223,7 +239,7 @@ def process_batch(folder_path, registry_path, recursive=False, clear_first=False
             rel_path = os.path.relpath(file_path, folder_path)
             print(f"\n[{i}/{len(files_found)}] Processing: {rel_path}")
             
-            success, error_msg = process_single_file(file_path, registry_path)
+            success, error_msg = process_single_file(file_path, registry_manager)
             
             if success:
                 stats['successful'] += 1
@@ -240,52 +256,39 @@ def process_batch(folder_path, registry_path, recursive=False, clear_first=False
         return stats
 
 
-def generate_batch_templates(registry_path):
+def generate_batch_templates(registry_manager):
     """
-    Generate templates for all APIs in the registry after batch processing.
+    Templates are now generated during processing, so this function just reports status.
     
     Args:
-        registry_path (str): Path to registry file
+        registry_manager (RegistryManager): Registry manager instance
         
     Returns:
         tuple: (success: bool, template_count: int)
     """
     try:
-        print(f"\n[BATCH] Generating templates for all APIs...")
+        print(f"\n[BATCH] Templates generated during processing...")
         print("-" * 40)
         
-        # Load registry
-        registry = load_registry(registry_path)
-        if not registry:
-            print("[WARN] No APIs found in registry for template generation")
-            return False, 0
+        # Get statistics from registry
+        stats = registry_manager.get_registry_stats()
+        template_count = stats.get('totalEndpoints', 0)
         
-        # Generate templates (reuse existing function)
-        updated_registry, template_count = generate_templates_for_registry(registry)
-        
-        # Save updated registry
-        success = save_registry(updated_registry, registry_path)
-        
-        if success:
-            print(f"[SUCCESS] Generated {template_count} template sets")
-            return True, template_count
-        else:
-            print("[ERROR] Failed to save templates to registry")
-            return False, 0
+        print(f"[SUCCESS] Templates available for {template_count} endpoints")
+        return True, template_count
         
     except Exception as e:
-        print(f"[ERROR] Template generation failed: {e}")
+        print(f"[ERROR] Failed to get template statistics: {e}")
         return False, 0
 
 
-def print_batch_summary(stats, template_count, registry_path):
+def print_batch_summary(stats, template_count):
     """
     Print a comprehensive summary of batch processing results.
     
     Args:
         stats (dict): Processing statistics
         template_count (int): Number of templates generated
-        registry_path (str): Path to registry file
     """
     print(f"\n[BATCH SUMMARY]")
     print("=" * 60)
@@ -298,15 +301,16 @@ def print_batch_summary(stats, template_count, registry_path):
         for i, error in enumerate(stats['errors'], 1):
             print(f"   {i}. {error}")
     
-    # Count total APIs in registry
+    # Get registry statistics
     try:
-        registry = load_registry(registry_path)
-        total_apis = len(registry) if registry else 0
+        registry_manager = RegistryManager()
+        registry_stats = registry_manager.get_registry_stats()
+        total_apis = registry_stats.get('totalAPIs', 0)
         print(f"\nTotal APIs in registry: {total_apis}")
         print(f"Templates generated: {template_count}")
-        print(f"Registry location: {registry_path}")
+        print(f"Registry location: modular system (registry/, apis/, api_templates/)")
     except:
-        print(f"\nRegistry location: {registry_path}")
+        print(f"\nRegistry location: modular system (registry/, apis/, api_templates/)")
     
     print("=" * 60)
     
@@ -349,12 +353,6 @@ Examples:
         help='Clear registry before processing'
     )
     
-    parser.add_argument(
-        '--registry',
-        default='registry/apis.json',
-        help='Path to registry file (default: registry/apis.json)'
-    )
-    
     args = parser.parse_args()
     
     # Validate folder path
@@ -365,20 +363,20 @@ Examples:
     # Process batch
     stats = process_batch(
         folder_path=args.folder_path,
-        registry_path=args.registry,
         recursive=args.recursive,
         clear_first=args.clear
     )
     
-    # Generate templates if any files were processed successfully
+    # Generate templates (now handled during processing)
     template_count = 0
     if stats['successful'] > 0:
-        success, template_count = generate_batch_templates(args.registry)
+        registry_manager = RegistryManager()
+        success, template_count = generate_batch_templates(registry_manager)
         if not success:
-            print("[WARN] Template generation failed, but APIs were processed")
+            print("[WARN] Template statistics unavailable, but APIs were processed")
     
     # Print summary
-    print_batch_summary(stats, template_count, args.registry)
+    print_batch_summary(stats, template_count)
     
     # Exit with appropriate code
     if stats['total_files'] == 0:

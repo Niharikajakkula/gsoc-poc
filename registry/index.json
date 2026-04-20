@@ -1,0 +1,113 @@
+{
+  "searchIndex": {
+    "byName": {
+      "auth examples api": [
+        "eabdaadb1a37"
+      ],
+      "endpoint auth test api": [
+        "19c49afe532c"
+      ],
+      "minimal api": [
+        "1c0ca8f21824"
+      ],
+      "multi-auth api": [
+        "d676d7c575a9"
+      ],
+      "public api": [
+        "f893136697cd"
+      ],
+      "pet store api": [
+        "048fb1a3bf14",
+        "433fe5dfe7dd"
+      ],
+      "petstore api": [
+        "524fe33fa136"
+      ],
+      "bearer auth test api": [
+        "46c171f99ca3"
+      ],
+      "ai language model api": [
+        "6f7c887ecd63"
+      ],
+      "e-commerce store api": [
+        "b30c75f6e9bc"
+      ],
+      "weather forecast api": [
+        "0e1d358dbd5f"
+      ],
+      "ai chat api": [
+        "cdfce1b600c4"
+      ]
+    },
+    "byAuthType": {
+      "none": [
+        "1c0ca8f21824",
+        "f893136697cd",
+        "048fb1a3bf14",
+        "524fe33fa136",
+        "433fe5dfe7dd"
+      ],
+      "apiKey": [
+        "eabdaadb1a37",
+        "19c49afe532c",
+        "d676d7c575a9",
+        "b30c75f6e9bc",
+        "0e1d358dbd5f"
+      ],
+      "bearer": [
+        "6f7c887ecd63",
+        "46c171f99ca3",
+        "cdfce1b600c4"
+      ],
+      "oauth2": []
+    },
+    "byMethod": {
+      "GET": [
+        "eabdaadb1a37",
+        "19c49afe532c",
+        "1c0ca8f21824",
+        "d676d7c575a9",
+        "f893136697cd",
+        "048fb1a3bf14",
+        "524fe33fa136",
+        "46c171f99ca3",
+        "433fe5dfe7dd",
+        "6f7c887ecd63",
+        "b30c75f6e9bc",
+        "0e1d358dbd5f",
+        "cdfce1b600c4"
+      ],
+      "POST": [
+        "19c49afe532c",
+        "1c0ca8f21824",
+        "d676d7c575a9",
+        "048fb1a3bf14",
+        "524fe33fa136",
+        "46c171f99ca3",
+        "6f7c887ecd63",
+        "b30c75f6e9bc",
+        "cdfce1b600c4"
+      ],
+      "PUT": [
+        "048fb1a3bf14",
+        "524fe33fa136"
+      ],
+      "DELETE": [
+        "048fb1a3bf14",
+        "524fe33fa136"
+      ],
+      "PATCH": []
+    },
+    "tags": []
+  },
+  "statistics": {
+    "totalAPIs": 13,
+    "totalEndpoints": 40,
+    "authTypeDistribution": {
+      "none": 5,
+      "apiKey": 5,
+      "bearer": 3,
+      "oauth2": 0
+    }
+  }
+}

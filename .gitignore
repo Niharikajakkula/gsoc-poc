@@ -1,5 +1,5 @@
-# Niharika's API Explorer PoC - Git Ignore File
-# GSoC 2026 Project
+# API Explorer PoC - Git Ignore File
+# Advanced OpenAPI Processing System
 
 # Node.js dependencies
 node_modules/
