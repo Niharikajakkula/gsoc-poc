@@ -10,8 +10,8 @@ let currentEndpoints = [];
 let currentEndpoint = null;
 let lastResponse = null;
 
-// Configuration - CORRECT PORT
-const API_BASE_URL = 'http://localhost:3002';
+// Configuration
+const API_BASE_URL = 'http://127.0.0.1:3002';
 
 console.log('🔧 API_BASE_URL configured as:', API_BASE_URL);
 
@@ -414,19 +414,20 @@ function renderEndpoints(endpoints) {
     }
     
     elements.endpointsList.innerHTML = endpoints.map((endpoint, index) => `
-        <div class="endpoint-item" data-method="${endpoint.method}">
+        <div class="endpoint-item" data-method="${endpoint.method}" style="display: block;">
             <div class="endpoint-header">
-                <span class="method-badge ${endpoint.method}">${endpoint.method}</span>
-                <span class="endpoint-path">${escapeHtml(endpoint.path)}</span>
+                <div class="endpoint-method-path">
+                    <span class="method-badge ${endpoint.method}">${endpoint.method}</span>
+                    <code class="endpoint-path">${escapeHtml(endpoint.path)}</code>
+                </div>
                 <div class="endpoint-auth">
                     ${getAuthIcon(endpoint.authType)}
-                    ${getEnhancedAuthBadge(endpoint.authType, true)}
                 </div>
             </div>
             
-            ${endpoint.description ? `
+            ${endpoint.summary || endpoint.description ? `
                 <div class="endpoint-description">
-                    ${escapeHtml(endpoint.description)}
+                    ${escapeHtml(endpoint.summary || endpoint.description)}
                 </div>
             ` : ''}
             
@@ -1058,28 +1059,28 @@ function handleMethodFilter(event) {
     
     const method = button.dataset.method;
     
+    console.log('🔍 Method filter clicked:', method || 'All');
+    
     // Update active state
     document.querySelectorAll('.method-btn').forEach(btn => {
         btn.classList.toggle('active', btn === button);
     });
     
     // Filter endpoints
-    if (!method || method === '') {
-        // Show all endpoints
-        document.querySelectorAll('.endpoint-item').forEach(item => {
-            item.style.display = 'block';
-        });
-    } else {
-        // Filter by method
-        document.querySelectorAll('.endpoint-item').forEach(item => {
-            const itemMethod = item.dataset.method;
-            item.style.display = itemMethod === method ? 'block' : 'none';
-        });
-    }
+    const endpointItems = document.querySelectorAll('.endpoint-item');
+    let visibleCount = 0;
     
-    // Update endpoint count
-    const visibleEndpoints = document.querySelectorAll('.endpoint-item[style*="block"], .endpoint-item:not([style*="none"])').length;
-    console.log(`🔍 Filtered to ${visibleEndpoints} endpoints for method: ${method || 'All'}`);
+    endpointItems.forEach(item => {
+        const itemMethod = item.dataset.method;
+        if (!method || method === '' || itemMethod === method) {
+            item.style.display = 'block';
+            visibleCount++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    
+    console.log(`✅ Showing ${visibleCount} of ${endpointItems.length} endpoints`);
 }
 
 /**
