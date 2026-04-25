@@ -6,10 +6,6 @@ on:
   pull_request:
     branches: [main]
 
-defaults:
-  run:
-    working-directory: projects/api-explorer-pipeline
-
 jobs:
   validate-files:
     name: Validate Project Files
@@ -28,6 +24,7 @@ jobs:
         run: pip install pyyaml
       
       - name: Validate OpenAPI JSON files
+        working-directory: projects/api-explorer-pipeline
         run: |
           echo "🔍 Validating JSON files..."
           for file in data/*.json; do
@@ -37,6 +34,7 @@ jobs:
           done
       
       - name: Check project structure
+        working-directory: projects/api-explorer-pipeline
         run: |
           echo "📁 Checking project structure..."
           [ -d "data" ] && echo "✅ data/ exists"
@@ -61,12 +59,15 @@ jobs:
           python-version: "3.9"
       
       - name: Install dependencies
+        working-directory: projects/api-explorer-pipeline
         run: pip install -r requirements.txt
       
       - name: Run batch processor
+        working-directory: projects/api-explorer-pipeline
         run: python pipeline/batch_processor.py data --clear
       
       - name: Verify registry was created
+        working-directory: projects/api-explorer-pipeline
         run: |
           if [ -f "registry/global_index.json" ]; then
             echo "✅ Registry created successfully"
@@ -96,20 +97,22 @@ jobs:
           python-version: "3.9"
       
       - name: Install Python dependencies
+        working-directory: projects/api-explorer-pipeline
         run: pip install -r requirements.txt
       
       - name: Generate test data
+        working-directory: projects/api-explorer-pipeline
         run: python pipeline/batch_processor.py data --clear
       
       - name: Install backend dependencies
-        run: npm install
         working-directory: projects/api-explorer-pipeline/backend
+        run: npm install
       
       - name: Start backend server
+        working-directory: projects/api-explorer-pipeline/backend
         run: |
           node simple-server.js &
           sleep 5
-        working-directory: projects/api-explorer-pipeline/backend
       
       - name: Test backend health
         run: |
@@ -120,7 +123,6 @@ jobs:
             echo "❌ Backend health check failed (HTTP $response)"
             exit 1
           fi
-        working-directory: projects/api-explorer-pipeline
 
   test-frontend:
     name: Test Frontend Files
@@ -137,6 +139,7 @@ jobs:
           node-version: "18"
       
       - name: Validate HTML
+        working-directory: projects/api-explorer-pipeline
         run: |
           if grep -q "API Explorer" frontend/index.html; then
             echo "✅ HTML is valid"
@@ -146,9 +149,11 @@ jobs:
           fi
       
       - name: Check JavaScript syntax
+        working-directory: projects/api-explorer-pipeline
         run: node -c frontend/script.js
       
       - name: Check CSS exists
+        working-directory: projects/api-explorer-pipeline
         run: |
           if [ -f "frontend/style.css" ]; then
             echo "✅ CSS file exists"
@@ -177,14 +182,17 @@ jobs:
           node-version: "18"
       
       - name: Install all dependencies
+        working-directory: projects/api-explorer-pipeline
         run: |
           pip install -r requirements.txt
           cd backend && npm install
       
       - name: Process APIs
+        working-directory: projects/api-explorer-pipeline
         run: python pipeline/batch_processor.py data --clear
       
       - name: Start backend
+        working-directory: projects/api-explorer-pipeline
         run: |
           cd backend
           node simple-server.js &
@@ -218,14 +226,15 @@ jobs:
           python-version: "3.9"
       
       - name: Install Python dependencies
-        run: pip install -r requirements.txt
         working-directory: projects/api-explorer-pipeline
+        run: pip install -r requirements.txt
       
       - name: Generate demo data
-        run: python pipeline/batch_processor.py data --clear
         working-directory: projects/api-explorer-pipeline
+        run: python pipeline/batch_processor.py data --clear
       
       - name: Prepare demo artifacts
+        working-directory: projects/api-explorer-pipeline
         run: |
           echo "📦 Preparing demo artifacts..."
           mkdir -p ../../demo-artifacts
@@ -237,7 +246,6 @@ jobs:
           cp -r data ../../demo-artifacts/
           cp README.md ../../demo-artifacts/
           echo "✅ Demo artifacts prepared"
-        working-directory: projects/api-explorer-pipeline
       
       - name: Archive demo artifacts
         uses: actions/upload-artifact@v4
