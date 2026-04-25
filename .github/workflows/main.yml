@@ -39,9 +39,9 @@ jobs:
     - name: Verify registry structure
       run: |
         echo "🔍 Verifying registry structure..."
-        if [ -f "projects/api-explorer-pipeline/pipeline/registry/global_index.json" ]; then
+        if [ -f "projects/api-explorer-pipeline/registry/global_index.json" ]; then
           echo "✅ Global index created"
-          python -m json.tool projects/api-explorer-pipeline/pipeline/registry/global_index.json > /dev/null
+          python -m json.tool projects/api-explorer-pipeline/registry/global_index.json > /dev/null
           echo "✅ Global index is valid JSON"
         else
           echo "❌ Global index not found"
