@@ -19,44 +19,22 @@ jobs:
       with:
         python-version: '3.9'
         
-    - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pyyaml
-        
     - name: Validate OpenAPI files
       run: |
         echo "🔍 Validating OpenAPI files..."
-        find data/ -name "*.json" -exec python -m json.tool {} \; > /dev/null 2>&1 || echo "⚠️  Some JSON files may have issues"
-        find data/ -name "*.yaml" -exec python -c "import yaml; yaml.safe_load(open('{}', 'r', encoding='utf-8'))" \; > /dev/null 2>&1 || echo "⚠️  Some YAML files may have issues"
-        find data/ -name "*.yml" -exec python -c "import yaml; yaml.safe_load(open('{}', 'r', encoding='utf-8'))" \; > /dev/null 2>&1 || echo "⚠️  Some YML files may have issues"
-        echo "✅ OpenAPI file validation completed"
-        
-    - name: Run API processing pipeline
-      run: |
-        echo "🚀 Running API processing pipeline..."
-        if [ -d "pipeline" ] && [ -d "data" ]; then
-          python pipeline/batch_processor.py data --clear
-          echo "✅ Pipeline completed successfully"
-        else
-          echo "⚠️  Pipeline skipped (directories may not exist in this branch)"
-        fi
-        
+        find projects/api-explorer-pipeline/data/ -name "*.json" -exec python -m json.tool {} \; > /dev/null 2>&1 || echo "⚠️  Some JSON files may have issues"
+        find projects/api-explorer-pipeline/data/ -name "*.yaml" -exec python -c "import yaml; yaml.safe_load(open('{}', 'r', encoding='utf-8'))" \; > /dev/null 2>&1 || echo "⚠️  Some YAML files may have issues"
+        find projects/api-explorer-pipeline/data/ -name "*.yml" -exec python -c "import yaml; yaml.safe_load(open('{}', 'r', encoding='utf-8'))" \; > /dev/null 2>&1 || echo "⚠️  Some YML files may have issues"
     - name: Verify registry structure
       run: |
         echo "🔍 Verifying registry structure..."
-        if [ -f "registry/global_index.json" ]; then
+        if [ -f "projects/api-explorer-pipeline/registry/global_index.json" ]; then
           echo "✅ Global index created"
-          python -m json.tool registry/global_index.json > /dev/null
-          echo "✅ Global index is valid JSON"
-        else
-          echo "⚠️  Registry verification skipped (may not exist yet)"
-        fi
-        
+          python -m json.tool projects/api-explorer-pipeline/registry/global_index.json > /dev/null
     - name: Check API metadata
       run: |
         echo "🔍 Checking API metadata files..."
-        api_count=$(find apis -name "metadata.json" 2>/dev/null | wc -l)
+        api_count=$(find projects/api-explorer-pipeline/apis -name "metadata.json" 2>/dev/null | wc -l)
         echo "📊 Found $api_count API metadata files"
         if [ $api_count -gt 0 ]; then
           echo "✅ API metadata files generated"
@@ -72,24 +50,15 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        
     - name: Install backend dependencies
       run: |
-        cd backend
-        npm install
-        
+        cd projects/api-explorer-pipeline/backend
     - name: Set up test data
       run: |
         echo "🔧 Setting up test data..."
-        python pipeline/batch_processor.py data --clear
-        
     - name: Start backend server
       run: |
-        cd backend
+        cd projects/api-explorer-pipeline/backend
         timeout 30s node simple-server.js &
         sleep 5
         
@@ -122,36 +91,25 @@ jobs:
           -d '{"query":"get users"}' > /dev/null
         echo "✅ AI search endpoint working"
 
-  test-frontend:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
     - name: Validate HTML
       run: |
         echo "🔍 Validating HTML structure..."
-        if [ -f "frontend/index.html" ] && grep -q "API Explorer" frontend/index.html; then
+        if [ -f "projects/api-explorer-pipeline/frontend/index.html" ] && grep -q "API Explorer" projects/api-explorer-pipeline/frontend/index.html; then
           echo "✅ HTML contains expected content"
         else
           echo "⚠️  HTML validation skipped (file may not exist in this branch)"
-        fi
-        
     - name: Check JavaScript syntax
       run: |
         echo "🔍 Checking JavaScript syntax..."
-        if [ -f "frontend/script.js" ]; then
-          node -c frontend/script.js
+        if [ -f "projects/api-explorer-pipeline/frontend/script.js" ]; then
+          node -c projects/api-explorer-pipeline/frontend/script.js
           echo "✅ JavaScript syntax is valid"
         else
           echo "⚠️  JavaScript validation skipped (file may not exist in this branch)"
-        fi
-        
     - name: Validate CSS
       run: |
         echo "🔍 Validating CSS..."
-        if [ -f "frontend/style.css" ]; then
+        if [ -f "projects/api-explorer-pipeline/frontend/style.css" ]; then
           echo "✅ CSS file exists"
         else
           echo "⚠️  CSS validation skipped (file may not exist in this branch)"
@@ -170,24 +128,18 @@ jobs:
       with:
         python-version: '3.9'
         
-    - uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        
     - name: Install all dependencies
       run: |
         pip install pyyaml
-        cd backend && npm install
-        
     - name: Run full integration test
       run: |
         echo "🚀 Running full integration test..."
         
         # Process APIs
-        python pipeline/batch_processor.py data --clear
+        python projects/api-explorer-pipeline/pipeline/batch_processor.py projects/api-explorer-pipeline/data --clear
         
         # Start backend
-        cd backend
+        cd projects/api-explorer-pipeline/backend
         timeout 60s node simple-server.js &
         sleep 10
         cd ..
@@ -222,23 +174,20 @@ jobs:
     if: github.ref == 'refs/heads/main'
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
     - name: Generate demo artifacts
       run: |
         echo "📦 Generating demo artifacts..."
         
         # Process APIs for demo
-        python pipeline/batch_processor.py data --clear
+        python projects/api-explorer-pipeline/pipeline/batch_processor.py projects/api-explorer-pipeline/data --clear
         
         # Copy artifacts
         mkdir -p demo-artifacts
-        cp -r registry demo-artifacts/
-        cp -r apis demo-artifacts/
-        cp -r api_templates demo-artifacts/
-        cp -r frontend demo-artifacts/
-        cp -r backend demo-artifacts/
+        cp -r projects/api-explorer-pipeline/registry demo-artifacts/
+        cp -r projects/api-explorer-pipeline/apis demo-artifacts/
+        cp -r projects/api-explorer-pipeline/api_templates demo-artifacts/
+        cp -r projects/api-explorer-pipeline/frontend demo-artifacts/
+        cp -r projects/api-explorer-pipeline/backend demo-artifacts/
         
         echo "✅ Demo artifacts generated"
         
