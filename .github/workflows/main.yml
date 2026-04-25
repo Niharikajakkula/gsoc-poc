@@ -6,256 +6,256 @@ on:
   pull_request:
     branches: [main]
 
-jobs:
-  test-pipeline:
-    runs-on: ubuntu-latest
+defaults:
+  run:
+    working-directory: projects/api-explorer-pipeline
 
+jobs:
+  validate-files:
+    name: Validate Project Files
+    runs-on: ubuntu-latest
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+      
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
-
+      
       - name: Install Python dependencies
+        run: pip install pyyaml
+      
+      - name: Validate OpenAPI JSON files
         run: |
-          python -m pip install --upgrade pip
-          pip install pyyaml
+          echo "🔍 Validating JSON files..."
+          for file in data/*.json; do
+            if [ -f "$file" ]; then
+              python -m json.tool "$file" > /dev/null && echo "✅ $file"
+            fi
+          done
+      
+      - name: Check project structure
+        run: |
+          echo "📁 Checking project structure..."
+          [ -d "data" ] && echo "✅ data/ exists"
+          [ -d "pipeline" ] && echo "✅ pipeline/ exists"
+          [ -d "backend" ] && echo "✅ backend/ exists"
+          [ -d "frontend" ] && echo "✅ frontend/ exists"
+          [ -d "registry" ] && echo "✅ registry/ exists"
+          [ -f "requirements.txt" ] && echo "✅ requirements.txt exists"
 
-      - name: Validate OpenAPI files
+  test-pipeline:
+    name: Test Python Pipeline
+    runs-on: ubuntu-latest
+    needs: validate-files
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+      
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      
+      - name: Run batch processor
+        run: python pipeline/batch_processor.py data --clear
+      
+      - name: Verify registry was created
         run: |
-          echo "🔍 Validating OpenAPI files..."
-          if [ -d "projects/api-explorer-pipeline/data" ]; then
-            find projects/api-explorer-pipeline/data/ -name "*.json" -exec python -m json.tool {} \; > /dev/null 2>&1 || echo "⚠️  Some JSON files may have issues"
-            echo "✅ OpenAPI file validation completed"
+          if [ -f "registry/global_index.json" ]; then
+            echo "✅ Registry created successfully"
+            python -m json.tool registry/global_index.json > /dev/null
           else
-            echo "⚠️  data/ folder not found, skipping validation"
-          fi
-
-      - name: Run API processing pipeline
-        run: |
-          echo "🚀 Running API processing pipeline..."
-          if [ -d "projects/api-explorer-pipeline/pipeline" ] && [ -d "projects/api-explorer-pipeline/data" ]; then
-            cd projects/api-explorer-pipeline
-            python pipeline/batch_processor.py data --clear
-            echo "✅ Pipeline completed successfully"
-          else
-            echo "⚠️  Pipeline skipped (directories may not exist)"
-          fi
-
-      - name: Verify registry structure
-        run: |
-          echo "🔍 Verifying registry structure..."
-          if [ -f "projects/api-explorer-pipeline/registry/global_index.json" ]; then
-            echo "✅ Global index created"
-            python -m json.tool projects/api-explorer-pipeline/registry/global_index.json > /dev/null
-            echo "✅ Global index is valid JSON"
-          else
-            echo "⚠️  Registry not found (may not exist yet)"
+            echo "❌ Registry not found"
+            exit 1
           fi
 
   test-backend:
+    name: Test Backend Server
     runs-on: ubuntu-latest
     needs: test-pipeline
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+      
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "18"
-
+      
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
-
+      
       - name: Install Python dependencies
-        run: pip install pyyaml
-
+        run: pip install -r requirements.txt
+      
+      - name: Generate test data
+        run: python pipeline/batch_processor.py data --clear
+      
       - name: Install backend dependencies
-        run: |
-          if [ -d "projects/api-explorer-pipeline/backend" ]; then
-            cd projects/api-explorer-pipeline/backend
-            npm install
-            echo "✅ Backend dependencies installed"
-          else
-            echo "⚠️  Backend folder not found"
-            exit 0
-          fi
-
-      - name: Set up test data
-        run: |
-          echo "🔧 Setting up test data..."
-          if [ -d "projects/api-explorer-pipeline/pipeline" ] && [ -d "projects/api-explorer-pipeline/data" ]; then
-            cd projects/api-explorer-pipeline
-            python pipeline/batch_processor.py data --clear
-            echo "✅ Test data ready"
-          else
-            echo "⚠️  Skipping test data setup"
-          fi
-
+        run: npm install
+        working-directory: projects/api-explorer-pipeline/backend
+      
       - name: Start backend server
         run: |
-          if [ -f "projects/api-explorer-pipeline/backend/simple-server.js" ]; then
-            cd projects/api-explorer-pipeline/backend
-            timeout 30s node simple-server.js &
-            sleep 5
-            echo "✅ Backend server started"
-          else
-            echo "⚠️  Backend server file not found"
-            exit 0
-          fi
-
+          node simple-server.js &
+          sleep 5
+        working-directory: projects/api-explorer-pipeline/backend
+      
       - name: Test backend health
         run: |
-          echo "🏥 Testing backend health..."
-          response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3002/ 2>/dev/null || echo "000")
+          response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3002/)
           if [ "$response" = "200" ]; then
-            echo "✅ Backend server is healthy"
+            echo "✅ Backend is healthy"
           else
-            echo "⚠️  Backend health check skipped (HTTP $response)"
+            echo "❌ Backend health check failed (HTTP $response)"
+            exit 1
           fi
+        working-directory: projects/api-explorer-pipeline
 
   test-frontend:
+    name: Test Frontend Files
     runs-on: ubuntu-latest
-
+    needs: validate-files
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+      
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "18"
-
+      
       - name: Validate HTML
         run: |
-          echo "🔍 Validating HTML structure..."
-          if [ -f "projects/api-explorer-pipeline/frontend/index.html" ] && grep -q "API Explorer" projects/api-explorer-pipeline/frontend/index.html; then
-            echo "✅ HTML contains expected content"
+          if grep -q "API Explorer" frontend/index.html; then
+            echo "✅ HTML is valid"
           else
-            echo "⚠️  HTML validation skipped"
+            echo "❌ HTML validation failed"
+            exit 1
           fi
-
+      
       - name: Check JavaScript syntax
+        run: node -c frontend/script.js
+      
+      - name: Check CSS exists
         run: |
-          echo "🔍 Checking JavaScript syntax..."
-          if [ -f "projects/api-explorer-pipeline/frontend/script.js" ]; then
-            node -c projects/api-explorer-pipeline/frontend/script.js
-            echo "✅ JavaScript syntax is valid"
-          else
-            echo "⚠️  JavaScript file not found"
-          fi
-
-      - name: Validate CSS
-        run: |
-          echo "🔍 Validating CSS..."
-          if [ -f "projects/api-explorer-pipeline/frontend/style.css" ]; then
+          if [ -f "frontend/style.css" ]; then
             echo "✅ CSS file exists"
           else
-            echo "⚠️  CSS file not found"
+            echo "❌ CSS file not found"
+            exit 1
           fi
 
   integration-test:
+    name: Integration Test
     runs-on: ubuntu-latest
     needs: [test-pipeline, test-backend, test-frontend]
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+      
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
-
+      
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "18"
-
+      
       - name: Install all dependencies
         run: |
-          pip install pyyaml
-          if [ -d "projects/api-explorer-pipeline/backend" ]; then
-            cd projects/api-explorer-pipeline/backend && npm install
-          fi
-
-      - name: Run full integration test
+          pip install -r requirements.txt
+          cd backend && npm install
+      
+      - name: Process APIs
+        run: python pipeline/batch_processor.py data --clear
+      
+      - name: Start backend
         run: |
-          echo "🚀 Running full integration test..."
-          
-          if [ ! -d "projects/api-explorer-pipeline/pipeline" ] || [ ! -d "projects/api-explorer-pipeline/data" ] || [ ! -d "projects/api-explorer-pipeline/backend" ]; then
-            echo "⚠️  Required directories not found, skipping integration test"
-            exit 0
-          fi
-
-          # Process APIs
-          cd projects/api-explorer-pipeline
-          python pipeline/batch_processor.py data --clear
-
-          # Start backend
           cd backend
-          timeout 60s node simple-server.js &
+          node simple-server.js &
           sleep 10
-          cd ../..
-
-          # Test API listing
-          response=$(curl -s http://localhost:3002/apis 2>/dev/null || echo "")
-          if echo "$response" | grep -q "success"; then
-            echo "✅ API listing working"
-          else
-            echo "⚠️  API listing test skipped"
-          fi
-
-          echo "✅ Integration test completed!"
+      
+      - name: Test API endpoints
+        run: |
+          echo "Testing /apis endpoint..."
+          curl -f http://localhost:3002/apis > /dev/null
+          echo "✅ /apis working"
+          
+          echo "Testing AI search..."
+          curl -f -X POST http://localhost:3002/agent/tools/search \
+            -H "Content-Type: application/json" \
+            -d '{"query":"get users"}' > /dev/null
+          echo "✅ AI search working"
 
   deploy-demo:
+    name: Deploy Demo Artifacts
     runs-on: ubuntu-latest
     needs: integration-test
     if: github.ref == 'refs/heads/main'
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+      
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
-
+      
       - name: Install Python dependencies
-        run: pip install pyyaml
-
-      - name: Generate demo artifacts
+        run: pip install -r requirements.txt
+        working-directory: projects/api-explorer-pipeline
+      
+      - name: Generate demo data
+        run: python pipeline/batch_processor.py data --clear
+        working-directory: projects/api-explorer-pipeline
+      
+      - name: Prepare demo artifacts
         run: |
-          echo "📦 Generating demo artifacts..."
-          
-          if [ -d "projects/api-explorer-pipeline/pipeline" ] && [ -d "projects/api-explorer-pipeline/data" ]; then
-            cd projects/api-explorer-pipeline
-            python pipeline/batch_processor.py data --clear
-            
-            cd ..
-            mkdir -p demo-artifacts
-            [ -d "api-explorer-pipeline/registry" ] && cp -r api-explorer-pipeline/registry demo-artifacts/
-            [ -d "api-explorer-pipeline/apis" ] && cp -r api-explorer-pipeline/apis demo-artifacts/
-            [ -d "api-explorer-pipeline/api_templates" ] && cp -r api-explorer-pipeline/api_templates demo-artifacts/
-            [ -d "api-explorer-pipeline/frontend" ] && cp -r api-explorer-pipeline/frontend demo-artifacts/
-            [ -d "api-explorer-pipeline/backend" ] && cp -r api-explorer-pipeline/backend demo-artifacts/
-            
-            echo "✅ Demo artifacts generated"
-          else
-            echo "⚠️  Skipping demo artifact generation"
-          fi
-
+          echo "📦 Preparing demo artifacts..."
+          mkdir -p ../../demo-artifacts
+          cp -r registry ../../demo-artifacts/
+          cp -r apis ../../demo-artifacts/
+          cp -r api_templates ../../demo-artifacts/
+          cp -r frontend ../../demo-artifacts/
+          cp -r backend ../../demo-artifacts/
+          cp -r data ../../demo-artifacts/
+          cp README.md ../../demo-artifacts/
+          echo "✅ Demo artifacts prepared"
+        working-directory: projects/api-explorer-pipeline
+      
       - name: Archive demo artifacts
         uses: actions/upload-artifact@v4
         with:
           name: api-explorer-demo
           path: demo-artifacts/
           retention-days: 30
+      
+      - name: Generate artifact summary
+        run: |
+          echo "## 📦 Demo Artifacts Generated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The following artifacts have been generated:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Registry (processed API data)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ APIs (13 processed APIs)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Templates (curl & PowerShell)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Frontend (HTML/CSS/JS)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Backend (Node.js server)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Data (OpenAPI specifications)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Download from the Actions artifacts section." >> $GITHUB_STEP_SUMMARY
