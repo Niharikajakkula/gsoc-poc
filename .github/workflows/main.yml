@@ -27,6 +27,10 @@ jobs:
     - name: Validate OpenAPI files
       run: |
         echo "🔍 Validating OpenAPI files..."
+        if [ ! -d "projects/api-explorer-pipeline/data" ]; then
+          echo "❌ data folder not found"
+          exit 1
+        fi
         find projects/api-explorer-pipeline/data/ -name "*.json" -exec python -m json.tool {} \; > /dev/null
         find projects/api-explorer-pipeline/data/ -name "*.yaml" -exec python -c "import yaml; yaml.safe_load(open('{}', 'r', encoding='utf-8'))" \; > /dev/null
         find projects/api-explorer-pipeline/data/ -name "*.yml" -exec python -c "import yaml; yaml.safe_load(open('{}', 'r', encoding='utf-8'))" \; > /dev/null
