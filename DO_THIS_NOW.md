@@ -1,13 +1,13 @@
 # DO THIS NOW - 3 Commands Only
 
-Copy and paste these 3 commands in Git Bash:
+**The workflow had a small bug. I fixed it. Run these commands:**
 
 ```bash
 cd /c/Users/dell/Documents/gsoc-poc
 
 git add .
 
-git commit -m "fix: Complete workflow fixes and documentation"
+git commit -m "fix: Fix workflow file validation glob pattern"
 
 git push origin main
 ```

@@ -82,15 +82,18 @@ jobs:
           yaml_count=0
           errors=0
           
-          # Check if any files exist
-          if ! ls data/*.json data/*.yaml data/*.yml 1> /dev/null 2>&1; then
+          # Check if any files exist (using find instead of ls with glob)
+          file_count=$(find data -maxdepth 1 -type f \( -name "*.json" -o -name "*.yaml" -o -name "*.yml" \) | wc -l)
+          if [ "$file_count" -eq 0 ]; then
             echo "⚠️  No OpenAPI files found in data/"
             echo "Directory contents:"
             ls -la data/
             exit 1
           fi
+          echo "Found $file_count OpenAPI files"
           
           # Validate JSON files
+          shopt -s nullglob  # Enable nullglob to handle no matches gracefully
           for file in data/*.json; do
             if [ -f "$file" ]; then
               if python -m json.tool "$file" > /dev/null 2>&1; then
@@ -115,6 +118,7 @@ jobs:
               fi
             fi
           done
+          shopt -u nullglob  # Disable nullglob
           
           echo ""
           echo "📊 Validation Summary:"
