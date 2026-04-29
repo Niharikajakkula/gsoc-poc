@@ -10,10 +10,16 @@ let currentEndpoints = [];
 let currentEndpoint = null;
 let lastResponse = null;
 
-// Configuration - CORRECT PORT
-const API_BASE_URL = 'http://localhost:3002';
+// Configuration - Production Ready
+// ✅ CHANGED: Now uses environment-based URL for production deployment
+const BASE_URL = process.env.NODE_ENV === 'production' 
+    ? 'https://gsoc-api-explorer.onrender.com'
+    : 'http://localhost:3002';
+
+const API_BASE_URL = BASE_URL;
 
 console.log('🔧 API_BASE_URL configured as:', API_BASE_URL);
+console.log('🔧 Environment:', process.env.NODE_ENV || 'development');
 
 // DOM Elements
 const elements = {
