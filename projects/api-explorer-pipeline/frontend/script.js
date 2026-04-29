@@ -484,8 +484,8 @@ async function queryAgentMCP() {
                                 html += `
                                     <div style="margin-top: 12px; padding: 12px; background: white; border-radius: 6px; border: 1px solid #ddd;">
                                         <div style="font-weight: bold; margin-bottom: 8px; color: #333;">🐕 Dog Image:</div>
-                                        <img src="${escapeHtml(responseData.message)}" style="max-width: 100%; height: auto; border-radius: 4px; max-height: 200px;">
-                                        <div style="font-size: 11px; color: #999; margin-top: 8px; word-break: break-all;">${escapeHtml(responseData.message)}</div>
+                                        <img src="${responseData.message}" style="max-width: 100%; height: auto; border-radius: 4px; max-height: 200px; display: block; margin-bottom: 8px;">
+                                        <div style="font-size: 11px; color: #999; word-break: break-all; font-family: monospace;">${escapeHtml(responseData.message)}</div>
                                     </div>
                                 `;
                             } else {
@@ -597,7 +597,7 @@ async function queryAgentMCPFullscreen() {
                                 html += `
                                     <div style="margin-top: 16px; padding: 16px; background: white; border-radius: 8px; border: 2px solid #ddd;">
                                         <div style="font-weight: bold; margin-bottom: 12px; color: #333; font-size: 16px;">🐕 Dog Image:</div>
-                                        <img src="${escapeHtml(responseData.message)}" style="max-width: 100%; height: auto; border-radius: 6px; max-height: 400px; display: block; margin-bottom: 12px;">
+                                        <img src="${responseData.message}" style="max-width: 100%; height: auto; border-radius: 6px; max-height: 400px; display: block; margin-bottom: 12px;">
                                         <div style="font-size: 12px; color: #999; word-break: break-all; font-family: monospace;">${escapeHtml(responseData.message)}</div>
                                     </div>
                                 `;
