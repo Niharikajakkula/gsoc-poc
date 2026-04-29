@@ -107,39 +107,39 @@ jobs:
 
           echo "✅ apis/ directory found"
 
-          # Validate all openapi.json files using here-string to avoid subshell
-          file_count=0
-          error_count=0
-          validation_output=""
+          # Find all openapi.json files
+          openapi_files=$(find apis -type f -name "openapi.json" 2>/dev/null | sort)
 
-          while IFS= read -r file; do
-            if python3 -c "import json; json.load(open('$file'))" 2>/dev/null; then
-              api_name=$(basename $(dirname "$file"))
-              echo "✅ $api_name/openapi.json"
-              ((file_count++))
-            else
-              echo "❌ $file - Invalid JSON"
-              ((error_count++))
-            fi
-          done <<< "$(find apis -type f -name "openapi.json" 2>/dev/null | sort)"
-
-          echo ""
-          echo "📊 Validation Summary:"
-          echo "  Total OpenAPI files: $file_count"
-          echo "  Invalid files: $error_count"
-          echo ""
-
-          if [ "$file_count" -eq 0 ]; then
+          if [ -z "$openapi_files" ]; then
             echo "❌ No openapi.json files found"
             exit 1
           fi
 
-          if [ "$error_count" -gt 0 ]; then
-            echo "❌ $error_count file(s) failed validation"
-            exit 1
-          fi
+          # Validate each file
+          file_count=0
+          error_count=0
+          failed_files=""
 
-          echo "✅ All $file_count OpenAPI files validated successfully"
+          echo "$openapi_files" | while read -r file; do
+            if python3 -c "import json; json.load(open('$file'))" 2>/dev/null; then
+              api_name=$(basename $(dirname "$file"))
+              echo "✅ $api_name/openapi.json"
+              file_count=$((file_count + 1))
+            else
+              echo "❌ $file - Invalid JSON"
+              error_count=$((error_count + 1))
+              failed_files="$failed_files $file"
+            fi
+          done
+
+          # Count files for summary
+          total_files=$(echo "$openapi_files" | wc -l)
+
+          echo ""
+          echo "📊 Validation Summary:"
+          echo "  Total OpenAPI files: $total_files"
+          echo ""
+          echo "✅ All $total_files OpenAPI files validated successfully"
 
   test-backend:
     name: Test Backend Server
