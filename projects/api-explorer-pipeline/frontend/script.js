@@ -1,67 +1,97 @@
 /**
- * API Explorer Frontend - Fixed Version
+ * API Explorer Frontend - Production Ready
  * Handles API data fetching, UI interactions, and template management
+ * 
+ * IMPORTANT: This is plain HTML/CSS/JS - NO build tools, NO Node.js
+ * All configuration must be browser-compatible
  */
 
-// Global state
+// ========================================
+// CONFIGURATION - MUST BE AT TOP
+// ========================================
+
+// Detect environment based on hostname (browser-safe)
+const BASE_URL = (function() {
+    const hostname = window.location.hostname;
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+    return isLocalhost ? 'http://localhost:3002' : 'https://gsoc-api-explorer.onrender.com';
+})();
+
+// Export to global scope for all functions
+const API_BASE_URL = BASE_URL;
+
+// Log configuration for debugging
+console.log('🔧 Frontend Configuration:');
+console.log('   Hostname:', window.location.hostname);
+console.log('   Environment:', window.location.hostname === 'localhost' ? 'development' : 'production');
+console.log('   API_BASE_URL:', API_BASE_URL);
+
+// ========================================
+// GLOBAL STATE
+// ========================================
+
 let allAPIs = [];
 let currentAPI = null;
 let currentEndpoints = [];
 let currentEndpoint = null;
 let lastResponse = null;
 
-// Configuration - Production Ready
-// ✅ CHANGED: Now uses hostname-based URL detection for production deployment
-// Automatically detects environment based on where frontend is hosted
-const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:3002'
-    : 'https://gsoc-api-explorer.onrender.com';
+// ========================================
+// DOM ELEMENTS - Initialized on DOMContentLoaded
+// ========================================
 
-const API_BASE_URL = BASE_URL;
+let elements = {}; // Will be populated in init()
 
-console.log('🔧 Frontend hostname:', window.location.hostname);
-console.log('🔧 API_BASE_URL configured as:', API_BASE_URL);
-console.log('🔧 Environment:', window.location.hostname === 'localhost' ? 'development' : 'production');
-
-// DOM Elements
-const elements = {
-    apiList: document.getElementById('api-list'),
-    loading: document.getElementById('loading'),
-    errorMessage: document.getElementById('error-message'),
-    welcomeScreen: document.getElementById('welcome-screen'),
-    apiDetails: document.getElementById('api-details'),
-    searchInput: document.getElementById('search-input'),
-    authFilter: document.getElementById('auth-filter'),
-    categoryFilter: document.getElementById('category-filter'),
-    apiCount: document.getElementById('api-count'),
-    endpointCount: document.getElementById('endpoint-count'),
+/**
+ * Initialize DOM element references
+ * Called after DOMContentLoaded to ensure all elements exist
+ */
+function initializeDOMElements() {
+    elements = {
+        apiList: document.getElementById('api-list'),
+        loading: document.getElementById('loading'),
+        errorMessage: document.getElementById('error-message'),
+        welcomeScreen: document.getElementById('welcome-screen'),
+        apiDetails: document.getElementById('api-details'),
+        searchInput: document.getElementById('search-input'),
+        authFilter: document.getElementById('auth-filter'),
+        categoryFilter: document.getElementById('category-filter'),
+        apiCount: document.getElementById('api-count'),
+        endpointCount: document.getElementById('endpoint-count'),
+        
+        // API Details elements
+        apiName: document.getElementById('api-name'),
+        apiAuthBadge: document.getElementById('api-auth-badge'),
+        apiBaseUrl: document.getElementById('api-base-url'),
+        apiBaseUrlDisplay: document.getElementById('api-base-url-display'),
+        baseUrlWarning: document.getElementById('base-url-warning'),
+        apiEndpointCount: document.getElementById('api-endpoint-count'),
+        endpointsList: document.getElementById('endpoints-list'),
+        
+        // Template Modal elements
+        templateModal: document.getElementById('template-modal'),
+        modalTitle: document.getElementById('modal-title'),
+        modalMethod: document.getElementById('modal-method'),
+        modalPath: document.getElementById('modal-path'),
+        curlCode: document.getElementById('curl-code'),
+        powershellCode: document.getElementById('powershell-code'),
+        
+        copyNotification: document.getElementById('copy-notification')
+    };
     
-    // API Details elements
-    apiName: document.getElementById('api-name'),
-    apiAuthBadge: document.getElementById('api-auth-badge'),
-    apiBaseUrl: document.getElementById('api-base-url'),
-    apiBaseUrlDisplay: document.getElementById('api-base-url-display'),
-    baseUrlWarning: document.getElementById('base-url-warning'),
-    apiEndpointCount: document.getElementById('api-endpoint-count'),
-    endpointsList: document.getElementById('endpoints-list'),
-    
-    // Template Modal elements
-    templateModal: document.getElementById('template-modal'),
-    modalTitle: document.getElementById('modal-title'),
-    modalMethod: document.getElementById('modal-method'),
-    modalPath: document.getElementById('modal-path'),
-    curlCode: document.getElementById('curl-code'),
-    powershellCode: document.getElementById('powershell-code'),
-    
-    copyNotification: document.getElementById('copy-notification')
-};
+    console.log('✅ DOM elements initialized');
+}
 
 /**
  * Initialize the application
+ * Called when DOM is fully loaded
  */
 function init() {
     console.log('🚀 Initializing API Explorer...');
     console.log('🔧 Backend URL:', API_BASE_URL);
+    
+    // Initialize DOM elements first
+    initializeDOMElements();
     
     // Set up event listeners
     setupEventListeners();
