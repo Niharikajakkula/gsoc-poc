@@ -481,10 +481,12 @@ async function queryAgentMCP() {
                         if (typeof responseData === 'object') {
                             // Check if it's a dog image API response
                             if (responseData.message && responseData.message.includes('http')) {
+                                // Use proxy to bypass CORS
+                                const proxyUrl = `${API_BASE_URL}/proxy/image?url=${encodeURIComponent(responseData.message)}`;
                                 html += `
                                     <div style="margin-top: 12px; padding: 12px; background: white; border-radius: 6px; border: 1px solid #ddd;">
                                         <div style="font-weight: bold; margin-bottom: 8px; color: #333;">🐕 Dog Image:</div>
-                                        <img src="${responseData.message}" crossorigin="anonymous" style="max-width: 100%; height: auto; border-radius: 4px; max-height: 200px; display: block; margin-bottom: 8px;">
+                                        <img src="${proxyUrl}" style="max-width: 100%; height: auto; border-radius: 4px; max-height: 200px; display: block; margin-bottom: 8px;">
                                         <div style="font-size: 11px; color: #999; word-break: break-all; font-family: monospace;">${escapeHtml(responseData.message)}</div>
                                     </div>
                                 `;
@@ -594,10 +596,12 @@ async function queryAgentMCPFullscreen() {
                         if (typeof responseData === 'object') {
                             // Check if it's a dog image API response
                             if (responseData.message && responseData.message.includes('http')) {
+                                // Use proxy to bypass CORS
+                                const proxyUrl = `${API_BASE_URL}/proxy/image?url=${encodeURIComponent(responseData.message)}`;
                                 html += `
                                     <div style="margin-top: 16px; padding: 16px; background: white; border-radius: 8px; border: 2px solid #ddd;">
                                         <div style="font-weight: bold; margin-bottom: 12px; color: #333; font-size: 16px;">🐕 Dog Image:</div>
-                                        <img src="${responseData.message}" crossorigin="anonymous" style="max-width: 100%; height: auto; border-radius: 6px; max-height: 400px; display: block; margin-bottom: 12px;">
+                                        <img src="${proxyUrl}" style="max-width: 100%; height: auto; border-radius: 6px; max-height: 400px; display: block; margin-bottom: 12px;">
                                         <div style="font-size: 12px; color: #999; word-break: break-all; font-family: monospace;">${escapeHtml(responseData.message)}</div>
                                     </div>
                                 `;
