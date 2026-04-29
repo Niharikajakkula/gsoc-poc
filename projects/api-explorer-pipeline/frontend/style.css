@@ -278,6 +278,31 @@ body {
   font-family: monospace;
 }
 
+.api-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.api-item-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.api-item-info {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  font-family: monospace;
+  margin-bottom: 0.5rem;
+}
+
+.api-item-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
 .loading-state,
 .error-state {
   padding: 2rem 1rem;
@@ -546,6 +571,16 @@ body {
   flex: 1;
 }
 
+.endpoint-description {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin: 0.75rem 0;
+  padding: 0.75rem;
+  background: var(--bg-tertiary);
+  border-left: 3px solid var(--primary);
+  border-radius: 0.25rem;
+}
+
 .endpoint-summary {
   font-size: 0.9rem;
   color: var(--text-secondary);
@@ -555,6 +590,22 @@ body {
 .endpoint-actions {
   display: flex;
   gap: 0.5rem;
+}
+
+.template-btn {
+  padding: 0.5rem 1rem;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.template-btn:hover {
+  background: var(--primary-dark);
 }
 
 .action-btn {
