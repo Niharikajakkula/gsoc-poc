@@ -11,15 +11,17 @@ let currentEndpoint = null;
 let lastResponse = null;
 
 // Configuration - Production Ready
-// ✅ CHANGED: Now uses environment-based URL for production deployment
-const BASE_URL = process.env.NODE_ENV === 'production' 
-    ? 'https://gsoc-api-explorer.onrender.com'
-    : 'http://localhost:3002';
+// ✅ CHANGED: Now uses hostname-based URL detection for production deployment
+// Automatically detects environment based on where frontend is hosted
+const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:3002'
+    : 'https://gsoc-api-explorer.onrender.com';
 
 const API_BASE_URL = BASE_URL;
 
+console.log('🔧 Frontend hostname:', window.location.hostname);
 console.log('🔧 API_BASE_URL configured as:', API_BASE_URL);
-console.log('🔧 Environment:', process.env.NODE_ENV || 'development');
+console.log('🔧 Environment:', window.location.hostname === 'localhost' ? 'development' : 'production');
 
 // DOM Elements
 const elements = {
@@ -164,7 +166,17 @@ async function loadAPIs() {
         const errorText = elements.errorMessage?.querySelector('p');
         if (errorText) {
             if (error.message.includes('Failed to fetch')) {
-                errorText.textContent = `Backend server not running. Please start the server on port 3002. (Attempted: ${API_BASE_URL})`;
+                const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+                if (isProduction) {
+                    errorText.innerHTML = `
+                        <strong>⏳ Backend is starting up...</strong><br>
+                        Render free tier may take 30-60 seconds to wake up.<br>
+                        <small>Attempted: ${API_BASE_URL}</small><br>
+                        <button onclick="location.reload()" style="margin-top: 10px; padding: 8px 16px; cursor: pointer;">Retry</button>
+                    `;
+                } else {
+                    errorText.textContent = `Backend server not running. Please start the server on port 3002. (Attempted: ${API_BASE_URL})`;
+                }
             } else {
                 errorText.textContent = `Failed to load APIs: ${error.message}`;
             }
