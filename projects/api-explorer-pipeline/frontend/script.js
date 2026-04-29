@@ -421,9 +421,18 @@ async function queryAgentMCP() {
     const input = document.getElementById('ai-query-input');
     const query = input?.value?.trim();
     
-    if (!query) return;
+    if (!query) {
+        alert('Please enter a query');
+        return;
+    }
     
     try {
+        // Show typing indicator
+        const typingDiv = document.getElementById('ai-typing');
+        const responseDiv = document.getElementById('ai-response');
+        if (typingDiv) typingDiv.style.display = 'block';
+        if (responseDiv) responseDiv.style.display = 'none';
+        
         const response = await fetch(`${API_BASE_URL}/agent/tools/search`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -433,30 +442,39 @@ async function queryAgentMCP() {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         
-        const responseDiv = document.getElementById('ai-response');
+        if (typingDiv) typingDiv.style.display = 'none';
+        
         const contentDiv = document.getElementById('ai-response-content');
         
-        if (data.success && data.matches?.length > 0) {
-            let html = '<div class="matches-list">';
+        if (data.success && data.matches && data.matches.length > 0) {
+            let html = '';
             data.matches.forEach(match => {
                 html += `
-                    <div class="match-item">
-                        <strong>${escapeHtml(match.apiName)}</strong><br>
-                        <code>${match.endpoint.method} ${escapeHtml(match.endpoint.path)}</code><br>
-                        <small>${escapeHtml(match.endpoint.summary || '')}</small>
+                    <div style="margin-bottom: 12px; padding: 10px; background: #f5f5f5; border-radius: 6px;">
+                        <div style="font-weight: bold; color: #333;">${escapeHtml(match.apiName)}</div>
+                        <div style="font-family: monospace; color: #666; margin: 4px 0;">
+                            <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px;">${match.endpoint.method}</span>
+                            ${escapeHtml(match.endpoint.path)}
+                        </div>
+                        ${match.endpoint.summary ? `<div style="font-size: 12px; color: #999;">${escapeHtml(match.endpoint.summary)}</div>` : ''}
                     </div>
                 `;
             });
-            html += '</div>';
             if (contentDiv) contentDiv.innerHTML = html;
         } else {
-            if (contentDiv) contentDiv.innerHTML = '<p>No matching endpoints found. Try queries like "get users", "create pet"</p>';
+            if (contentDiv) contentDiv.innerHTML = '<p style="color: #999;">No matching endpoints found. Try: "get users", "create pet", "list items"</p>';
         }
         
         if (responseDiv) responseDiv.style.display = 'block';
     } catch (error) {
+        const typingDiv = document.getElementById('ai-typing');
+        if (typingDiv) typingDiv.style.display = 'none';
+        
         const contentDiv = document.getElementById('ai-response-content');
-        if (contentDiv) contentDiv.innerHTML = `<p>Error: ${error.message}</p>`;
+        if (contentDiv) contentDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+        
+        const responseDiv = document.getElementById('ai-response');
+        if (responseDiv) responseDiv.style.display = 'block';
     }
 }
 
@@ -464,9 +482,18 @@ async function queryAgentMCPFullscreen() {
     const input = document.getElementById('ai-fullscreen-query-input');
     const query = input?.value?.trim();
     
-    if (!query) return;
+    if (!query) {
+        alert('Please enter a query');
+        return;
+    }
     
     try {
+        // Show typing indicator
+        const typingDiv = document.getElementById('ai-fullscreen-typing');
+        const responseDiv = document.getElementById('ai-fullscreen-response');
+        if (typingDiv) typingDiv.style.display = 'block';
+        if (responseDiv) responseDiv.style.display = 'none';
+        
         const response = await fetch(`${API_BASE_URL}/agent/tools/search`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -476,30 +503,39 @@ async function queryAgentMCPFullscreen() {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         
-        const responseDiv = document.getElementById('ai-fullscreen-response');
+        if (typingDiv) typingDiv.style.display = 'none';
+        
         const contentDiv = document.getElementById('ai-fullscreen-response-content');
         
-        if (data.success && data.matches?.length > 0) {
-            let html = '<div class="matches-list">';
+        if (data.success && data.matches && data.matches.length > 0) {
+            let html = '';
             data.matches.forEach(match => {
                 html += `
-                    <div class="match-item">
-                        <strong>${escapeHtml(match.apiName)}</strong><br>
-                        <code>${match.endpoint.method} ${escapeHtml(match.endpoint.path)}</code><br>
-                        <small>${escapeHtml(match.endpoint.summary || '')}</small>
+                    <div style="margin-bottom: 12px; padding: 10px; background: #f5f5f5; border-radius: 6px;">
+                        <div style="font-weight: bold; color: #333;">${escapeHtml(match.apiName)}</div>
+                        <div style="font-family: monospace; color: #666; margin: 4px 0;">
+                            <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px;">${match.endpoint.method}</span>
+                            ${escapeHtml(match.endpoint.path)}
+                        </div>
+                        ${match.endpoint.summary ? `<div style="font-size: 12px; color: #999;">${escapeHtml(match.endpoint.summary)}</div>` : ''}
                     </div>
                 `;
             });
-            html += '</div>';
             if (contentDiv) contentDiv.innerHTML = html;
         } else {
-            if (contentDiv) contentDiv.innerHTML = '<p>No matching endpoints found. Try queries like "get users", "create pet"</p>';
+            if (contentDiv) contentDiv.innerHTML = '<p style="color: #999;">No matching endpoints found. Try: "get users", "create pet", "list items"</p>';
         }
         
         if (responseDiv) responseDiv.style.display = 'block';
     } catch (error) {
+        const typingDiv = document.getElementById('ai-fullscreen-typing');
+        if (typingDiv) typingDiv.style.display = 'none';
+        
         const contentDiv = document.getElementById('ai-fullscreen-response-content');
-        if (contentDiv) contentDiv.innerHTML = `<p>Error: ${error.message}</p>`;
+        if (contentDiv) contentDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+        
+        const responseDiv = document.getElementById('ai-fullscreen-response');
+        if (responseDiv) responseDiv.style.display = 'block';
     }
 }
 
