@@ -62,94 +62,45 @@ jobs:
         working-directory: ${{ env.PROJECT_DIR }}
         run: |
           echo "🔍 Validating OpenAPI files..."
-          echo ""
 
           # Check if apis directory exists
           if [ ! -d "apis" ]; then
             echo "❌ apis/ directory not found"
-            echo ""
-            echo "📋 Debugging - Current directory contents:"
-            ls -la
             exit 1
           fi
 
           echo "✅ apis/ directory found"
-          echo ""
-          echo "📁 Directory structure:"
-          ls -la apis/ | head -20
-          echo ""
 
-          # Use robust find command to detect all openapi.json files
-          echo "🔎 Searching for openapi.json files using find..."
-          openapi_files=$(find apis -type f -name "openapi.json" 2>/dev/null)
+          # Fast validation - count and validate in one pass
+          file_count=0
+          error_count=0
 
-          if [ -z "$openapi_files" ]; then
-            echo "❌ ERROR: No openapi.json files found in apis/"
-            echo ""
-            echo "📋 Debugging info:"
-            echo "Current directory: $(pwd)"
-            echo "apis/ contents:"
-            find apis -type f | head -30
-            exit 1
-          fi
-
-          # Count files
-          file_count=$(echo "$openapi_files" | wc -l)
-          echo "✅ Found $file_count openapi.json file(s)"
-          echo ""
-
-          # Print all detected files
-          echo "📋 Detected OpenAPI files:"
-          echo "$openapi_files" | while read file; do
-            echo "  - $file"
-          done
-          echo ""
-
-          # Validate each file and count valid ones
-          echo "🔍 Validating JSON syntax..."
-          json_count=0
-          errors=0
-
-          # Use a temporary file to store results (avoid subshell issues)
-          temp_results=$(mktemp)
-
-          while IFS= read -r file; do
-            if [ -f "$file" ]; then
-              if python -m json.tool "$file" > /dev/null 2>&1; then
-                echo "✅ $(basename $(dirname $file))/openapi.json"
-                echo "1" >> "$temp_results"
-              else
-                echo "❌ $(basename $file) - Invalid JSON"
-                echo "0" >> "$temp_results"
-              fi
+          for file in $(find apis -type f -name "openapi.json" 2>/dev/null | sort); do
+            if python3 -c "import json; json.load(open('$file'))" 2>/dev/null; then
+              echo "✅ $(dirname $file | xargs basename)/openapi.json"
+              ((file_count++))
+            else
+              echo "❌ $file - Invalid JSON"
+              ((error_count++))
             fi
-          done <<< "$openapi_files"
-
-          # Count valid files
-          final_count=$(grep -c "1" "$temp_results" 2>/dev/null || echo "0")
-          error_count=$(grep -c "0" "$temp_results" 2>/dev/null || echo "0")
-
-          # Cleanup
-          rm -f "$temp_results"
+          done
 
           echo ""
           echo "📊 Validation Summary:"
-          echo "  Total files found: $file_count"
-          echo "  Valid JSON files: $final_count"
-          echo "  Invalid files: $error_count"
+          echo "  Total OpenAPI files: $file_count"
           echo ""
 
-          if [ "$final_count" -eq 0 ]; then
-            echo "❌ No valid OpenAPI files found"
+          if [ "$file_count" -eq 0 ]; then
+            echo "❌ No openapi.json files found"
             exit 1
           fi
 
           if [ "$error_count" -gt 0 ]; then
-            echo "⚠️  Warning: $error_count file(s) have invalid JSON"
+            echo "❌ $error_count file(s) failed validation"
             exit 1
           fi
 
-          echo "✅ All OpenAPI files are valid ($final_count files)"
+          echo "✅ All $file_count OpenAPI files validated successfully"
 
   test-backend:
     name: Test Backend Server
