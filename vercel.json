@@ -1,0 +1,19 @@
+{
+  "buildCommand": "npm install",
+  "outputDirectory": ".",
+  "functions": {
+    "api/server.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/server.js"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/2026/niharika-api-explorer/frontend/$1"
+    }
+  ]
+}
