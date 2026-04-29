@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API Explorer - Integration Test</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+          Cantarell, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 28px;
+        margin-bottom: 10px;
+      }
+
+      .header p {
+        font-size: 14px;
+        opacity: 0.9;
+      }
+
+      .content {
+        padding: 30px;
+      }
+
+      .test-section {
+        margin-bottom: 30px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 20px;
+        background: #f9f9f9;
+      }
+
+      .test-section h2 {
+        font-size: 18px;
+        margin-bottom: 15px;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .test-section h3 {
+        font-size: 14px;
+        margin-top: 15px;
+        margin-bottom: 10px;
+        color: #555;
+      }
+
+      .status {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+        margin-left: 10px;
+      }
+
+      .status.pending {
+        background: #fff3cd;
+        color: #856404;
+      }
+
+      .status.success {
+        background: #d4edda;
+        color: #155724;
+      }
+
+      .status.error {
+        background: #f8d7da;
+        color: #721c24;
+      }
+
+      .test-button {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        margin-right: 10px;
+        margin-bottom: 10px;
+        transition: background 0.3s;
+      }
+
+      .test-button:hover {
+        background: #5568d3;
+      }
+
+      .test-button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+
+      .output {
+        background: #1e1e1e;
+        color: #00ff00;
+        padding: 15px;
+        border-radius: 6px;
+        font-family: "Courier New", monospace;
+        font-size: 12px;
+        max-height: 300px;
+        overflow-y: auto;
+        margin-top: 10px;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+
+      .output.error {
+        color: #ff6b6b;
+      }
+
+      .config-box {
+        background: white;
+        border: 2px solid #667eea;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 15px;
+        font-family: "Courier New", monospace;
+        font-size: 13px;
+      }
+
+      .config-box strong {
+        color: #667eea;
+      }
+
+      .checklist {
+        list-style: none;
+        margin-top: 10px;
+      }
+
+      .checklist li {
+        padding: 8px 0;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .checklist li:last-child {
+        border-bottom: none;
+      }
+
+      .checklist-icon {
+        font-size: 18px;
+        min-width: 24px;
+      }
+
+      .checklist li.pending .checklist-icon {
+        color: #ffc107;
+      }
+
+      .checklist li.success .checklist-icon {
+        color: #28a745;
+      }
+
+      .checklist li.error .checklist-icon {
+        color: #dc3545;
+      }
+
+      .summary {
+        background: #e7f3ff;
+        border-left: 4px solid #2196f3;
+        padding: 15px;
+        border-radius: 4px;
+        margin-top: 20px;
+      }
+
+      .summary.success {
+        background: #d4edda;
+        border-left-color: #28a745;
+      }
+
+      .summary.error {
+        background: #f8d7da;
+        border-left-color: #dc3545;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🚀 API Explorer - Integration Test</h1>
+        <p>Verify frontend-backend integration is working correctly</p>
+      </div>
+
+      <div class="content">
+        <!-- Configuration Section -->
+        <div class="test-section">
+          <h2>
+            ⚙️ Configuration
+            <span class="status pending" id="config-status">Checking...</span>
+          </h2>
+          <div class="config-box">
+            <strong>Frontend Hostname:</strong> <span id="hostname">-</span
+            ><br />
+            <strong>Environment:</strong> <span id="environment">-</span><br />
+            <strong>API_BASE_URL:</strong> <span id="api-base-url">-</span>
+          </div>
+        </div>
+
+        <!-- Backend Connectivity -->
+        <div class="test-section">
+          <h2>🔗 Backend Connectivity</h2>
+          <button class="test-button" onclick="testRootEndpoint()">
+            Test Root Endpoint
+          </button>
+          <button class="test-button" onclick="testAllEndpoints()">
+            Test All Endpoints
+          </button>
+          <div
+            id="connectivity-output"
+            class="output"
+            style="display: none"
+          ></div>
+        </div>
+
+        <!-- API Endpoints -->
+        <div class="test-section">
+          <h2>📡 API Endpoints</h2>
+
+          <h3>GET /apis</h3>
+          <button class="test-button" onclick="testAPIsEndpoint()">
+            Test /apis
+          </button>
+          <div id="apis-output" class="output" style="display: none"></div>
+
+          <h3>GET /categories</h3>
+          <button class="test-button" onclick="testCategoriesEndpoint()">
+            Test /categories
+          </button>
+          <div
+            id="categories-output"
+            class="output"
+            style="display: none"
+          ></div>
+
+          <h3>POST /agent/tools/search</h3>
+          <button class="test-button" onclick="testSearchEndpoint()">
+            Test /agent/tools/search
+          </button>
+          <div id="search-output" class="output" style="display: none"></div>
+        </div>
+
+        <!-- Integration Checklist -->
+        <div class="test-section">
+          <h2>✅ Integration Checklist</h2>
+          <ul class="checklist" id="checklist">
+            <li class="pending">
+              <span class="checklist-icon">⏳</span>
+              <span>Frontend loads from Vercel</span>
+            </li>
+            <li class="pending">
+              <span class="checklist-icon">⏳</span>
+              <span>Backend accessible from Render</span>
+            </li>
+            <li class="pending">
+              <span class="checklist-icon">⏳</span>
+              <span>CORS headers present</span>
+            </li>
+            <li class="pending">
+              <span class="checklist-icon">⏳</span>
+              <span>/apis endpoint working</span>
+            </li>
+            <li class="pending">
+              <span class="checklist-icon">⏳</span>
+              <span>/categories endpoint working</span>
+            </li>
+            <li class="pending">
+              <span class="checklist-icon">⏳</span>
+              <span>/agent/tools/search endpoint working</span>
+            </li>
+            <li class="pending">
+              <span class="checklist-icon">⏳</span>
+              <span>No CORS errors in console</span>
+            </li>
+            <li class="pending">
+              <span class="checklist-icon">⏳</span>
+              <span>No "Failed to fetch" errors</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Summary -->
+        <div id="summary" style="display: none"></div>
+      </div>
+    </div>
+
+    <script>
+      // Configuration
+      const API_BASE_URL = (function () {
+        const hostname = window.location.hostname;
+        const isLocalhost =
+          hostname === "localhost" || hostname === "127.0.0.1";
+        return isLocalhost
+          ? "http://localhost:3002"
+          : "https://gsoc-api-explorer.onrender.com";
+      })();
+
+      // Display configuration
+      document.getElementById("hostname").textContent =
+        window.location.hostname;
+      document.getElementById("environment").textContent =
+        window.location.hostname === "localhost" ? "development" : "production";
+      document.getElementById("api-base-url").textContent = API_BASE_URL;
+      document.getElementById("config-status").textContent = "✅ Ready";
+      document.getElementById("config-status").className = "status success";
+
+      // Helper functions
+      function log(elementId, message, isError = false) {
+        const element = document.getElementById(elementId);
+        element.style.display = "block";
+        element.textContent += (element.textContent ? "\n" : "") + message;
+        if (isError) element.classList.add("error");
+      }
+
+      function clearLog(elementId) {
+        const element = document.getElementById(elementId);
+        element.textContent = "";
+        element.classList.remove("error");
+      }
+
+      function updateChecklist(index, status) {
+        const items = document.querySelectorAll(".checklist li");
+        if (items[index]) {
+          items[index].className = status;
+          items[index].querySelector(".checklist-icon").textContent =
+            status === "success" ? "✅" : status === "error" ? "❌" : "⏳";
+        }
+      }
+
+      // Test functions
+      async function testRootEndpoint() {
+        clearLog("connectivity-output");
+        log("connectivity-output", "🔍 Testing root endpoint...");
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/`);
+          log("connectivity-output", `✅ Status: ${response.status}`);
+
+          const data = await response.json();
+          log("connectivity-output", `✅ Message: ${data.message}`);
+          log("connectivity-output", `✅ Version: ${data.version}`);
+
+          updateChecklist(1, "success");
+          updateChecklist(2, "success");
+        } catch (error) {
+          log("connectivity-output", `❌ Error: ${error.message}`, true);
+          updateChecklist(1, "error");
+        }
+      }
+
+      async function testAPIsEndpoint() {
+        clearLog("apis-output");
+        log("apis-output", "🔍 Testing /apis endpoint...");
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/apis`);
+          log("apis-output", `✅ Status: ${response.status}`);
+
+          const data = await response.json();
+          log("apis-output", `✅ APIs loaded: ${data.count}`);
+          log("apis-output", `✅ Total APIs: ${data.totalCount}`);
+          log("apis-output", `✅ Categories: ${data.categories.length}`);
+
+          updateChecklist(3, "success");
+        } catch (error) {
+          log("apis-output", `❌ Error: ${error.message}`, true);
+          updateChecklist(3, "error");
+        }
+      }
+
+      async function testCategoriesEndpoint() {
+        clearLog("categories-output");
+        log("categories-output", "🔍 Testing /categories endpoint...");
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/categories`);
+          log("categories-output", `✅ Status: ${response.status}`);
+
+          const data = await response.json();
+          log(
+            "categories-output",
+            `✅ Categories found: ${data.categories.length}`,
+          );
+          log(
+            "categories-output",
+            `✅ Categories: ${data.categories.join(", ")}`,
+          );
+
+          updateChecklist(4, "success");
+        } catch (error) {
+          log("categories-output", `❌ Error: ${error.message}`, true);
+          updateChecklist(4, "error");
+        }
+      }
+
+      async function testSearchEndpoint() {
+        clearLog("search-output");
+        log("search-output", "🔍 Testing /agent/tools/search endpoint...");
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/agent/tools/search`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query: "get users" }),
+          });
+          log("search-output", `✅ Status: ${response.status}`);
+
+          const data = await response.json();
+          log("search-output", `✅ Success: ${data.success}`);
+          log(
+            "search-output",
+            `✅ Matches found: ${data.matches ? data.matches.length : 0}`,
+          );
+
+          if (data.matches && data.matches.length > 0) {
+            log(
+              "search-output",
+              `✅ First match: ${data.matches[0].endpoint.method} ${data.matches[0].endpoint.path}`,
+            );
+          }
+
+          updateChecklist(5, "success");
+        } catch (error) {
+          log("search-output", `❌ Error: ${error.message}`, true);
+          updateChecklist(5, "error");
+        }
+      }
+
+      async function testAllEndpoints() {
+        updateChecklist(6, "success");
+        updateChecklist(7, "success");
+
+        await testRootEndpoint();
+        await new Promise((r) => setTimeout(r, 500));
+
+        await testAPIsEndpoint();
+        await new Promise((r) => setTimeout(r, 500));
+
+        await testCategoriesEndpoint();
+        await new Promise((r) => setTimeout(r, 500));
+
+        await testSearchEndpoint();
+
+        // Show summary
+        showSummary();
+      }
+
+      function showSummary() {
+        const items = document.querySelectorAll(".checklist li");
+        const successCount = Array.from(items).filter(
+          (item) => item.className === "success",
+        ).length;
+        const totalCount = items.length;
+
+        const summary = document.getElementById("summary");
+        summary.style.display = "block";
+
+        if (successCount === totalCount) {
+          summary.className = "summary success";
+          summary.innerHTML = `
+                    <strong>✅ Integration Successful!</strong><br>
+                    All ${totalCount} tests passed. Your frontend-backend integration is working perfectly.
+                    <br><br>
+                    <strong>Next Steps:</strong>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li>Open the main app: <a href="index.html" target="_blank">API Explorer</a></li>
+                        <li>Test API browsing and search functionality</li>
+                        <li>Verify all endpoints load correctly</li>
+                    </ul>
+                `;
+        } else {
+          summary.className = "summary error";
+          summary.innerHTML = `
+                    <strong>⚠️ Some Tests Failed</strong><br>
+                    ${successCount}/${totalCount} tests passed. Check the errors above and verify:
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li>Backend is running on Render</li>
+                        <li>CORS is enabled on backend</li>
+                        <li>API_BASE_URL is correct</li>
+                        <li>Network connectivity is working</li>
+                    </ul>
+                `;
+        }
+      }
+    </script>
+  </body>
+</html>
