@@ -1,5 +1,5 @@
 /**
- * API Explorer Frontend - Production Ready
+ * API Explorer Frontend - Production Ready & Optimized
  * Plain HTML/CSS/JavaScript - NO build tools, NO Node.js
  * Browser-compatible configuration only
  */
@@ -17,10 +17,6 @@ const BASE_URL = (function() {
 
 const API_BASE_URL = BASE_URL;
 
-console.log('✅ Configuration loaded');
-console.log('   Hostname:', window.location.hostname);
-console.log('   API_BASE_URL:', API_BASE_URL);
-
 // ========================================
 // GLOBAL STATE
 // ========================================
@@ -29,8 +25,9 @@ let allAPIs = [];
 let currentAPI = null;
 let currentEndpoints = [];
 let currentEndpoint = null;
-let lastResponse = null;
 let elements = {};
+let apiCache = {}; // Cache for API details
+let categoryCache = null; // Cache for categories
 
 // ========================================
 // DOM INITIALIZATION
@@ -51,19 +48,14 @@ function initializeDOMElements() {
         apiName: document.getElementById('api-name'),
         apiAuthBadge: document.getElementById('api-auth-badge'),
         apiBaseUrl: document.getElementById('api-base-url'),
-        apiBaseUrlDisplay: document.getElementById('api-base-url-display'),
-        baseUrlWarning: document.getElementById('base-url-warning'),
         apiEndpointCount: document.getElementById('api-endpoint-count'),
         endpointsList: document.getElementById('endpoints-list'),
         templateModal: document.getElementById('template-modal'),
         modalTitle: document.getElementById('modal-title'),
-        modalMethod: document.getElementById('modal-method'),
-        modalPath: document.getElementById('modal-path'),
         curlCode: document.getElementById('curl-code'),
         powershellCode: document.getElementById('powershell-code'),
         copyNotification: document.getElementById('copy-notification')
     };
-    console.log('✅ DOM elements initialized');
 }
 
 // ========================================
@@ -71,7 +63,6 @@ function initializeDOMElements() {
 // ========================================
 
 function init() {
-    console.log('🚀 Initializing API Explorer');
     initializeDOMElements();
     setupEventListeners();
     loadAPIs();
@@ -105,7 +96,6 @@ function setupEventListeners() {
 // ========================================
 
 async function loadAPIs() {
-    console.log('📡 Loading APIs from:', API_BASE_URL);
     try {
         if (elements.loading) elements.loading.style.display = 'block';
         if (elements.errorMessage) elements.errorMessage.style.display = 'none';
@@ -115,26 +105,25 @@ async function loadAPIs() {
             ? `${API_BASE_URL}/apis?category=${encodeURIComponent(categoryFilter)}` 
             : `${API_BASE_URL}/apis`;
         
-        const response = await fetch(url);
+        const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
         const data = await response.json();
         allAPIs = data.apis || [];
+        categoryCache = data.categories || [];
         
-        console.log(`✅ Loaded ${allAPIs.length} APIs`);
-        updateCategoryFilter(data.categories || []);
+        updateCategoryFilter(categoryCache);
         updateStats(data.count, data.totalCount);
         renderAPIList(allAPIs);
         
         if (elements.loading) elements.loading.style.display = 'none';
     } catch (error) {
-        console.error('❌ Failed to load APIs:', error);
         if (elements.loading) elements.loading.style.display = 'none';
         if (elements.errorMessage) elements.errorMessage.style.display = 'block';
         
         const errorText = elements.errorMessage?.querySelector('p');
         if (errorText) {
-            if (error.message.includes('Failed to fetch')) {
+            if (error.message.includes('Failed to fetch') || error.name === 'AbortError') {
                 errorText.innerHTML = `
                     <strong>⏳ Backend is starting...</strong><br>
                     Render free tier may take 30-60 seconds to wake up.<br>
@@ -187,8 +176,15 @@ function renderAPIList(apis) {
         elements.apiList.innerHTML = '<div class="empty-state"><p>No APIs found</p></div>';
         return;
     }
-    elements.apiList.innerHTML = apis.map(api => `
-        <div class="api-item" data-api-id="${api.id}" onclick="selectAPI('${api.id}')" style="cursor: pointer;">
+    // Use DocumentFragment for faster DOM insertion
+    const fragment = document.createDocumentFragment();
+    apis.forEach(api => {
+        const div = document.createElement('div');
+        div.className = 'api-item';
+        div.dataset.apiId = api.id;
+        div.style.cursor = 'pointer';
+        div.onclick = () => selectAPI(api.id);
+        div.innerHTML = `
             <div class="api-item-header">
                 <h3>${escapeHtml(api.name)}</h3>
                 ${getAuthBadge(api.authType)}
@@ -199,8 +195,11 @@ function renderAPIList(apis) {
             <div class="api-item-meta">
                 <i class="fas fa-link"></i> ${api.endpointCount || 0} endpoint${(api.endpointCount || 0) !== 1 ? 's' : ''}
             </div>
-        </div>
-    `).join('');
+        `;
+        fragment.appendChild(div);
+    });
+    elements.apiList.innerHTML = '';
+    elements.apiList.appendChild(fragment);
 }
 
 function getAuthBadge(authType) {
@@ -219,7 +218,6 @@ function getAuthBadge(authType) {
 // ========================================
 
 async function selectAPI(apiId) {
-    console.log(`🎯 Selecting API: ${apiId}`);
     currentAPI = allAPIs.find(api => api.id === apiId);
     if (!currentAPI) return;
     
@@ -232,15 +230,21 @@ async function selectAPI(apiId) {
     if (elements.apiName) elements.apiName.textContent = currentAPI.name;
     if (elements.apiEndpointCount) elements.apiEndpointCount.textContent = currentAPI.endpointCount || 0;
     
+    // Use cache if available
+    if (apiCache[apiId]) {
+        currentEndpoints = apiCache[apiId];
+        renderEndpoints(currentEndpoints);
+        return;
+    }
+    
     try {
-        const response = await fetch(`${API_BASE_URL}/apis/${apiId}/details`);
+        const response = await fetch(`${API_BASE_URL}/apis/${apiId}/details`, { signal: AbortSignal.timeout(8000) });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         currentEndpoints = data.endpoints || [];
-        console.log(`✅ Loaded ${currentEndpoints.length} endpoints`);
+        apiCache[apiId] = currentEndpoints; // Cache for future use
         renderEndpoints(currentEndpoints);
     } catch (error) {
-        console.error('❌ Failed to load endpoints:', error);
         currentEndpoints = [];
     }
 }
@@ -251,8 +255,13 @@ function renderEndpoints(endpoints) {
         elements.endpointsList.innerHTML = '<div class="empty-state"><p>No endpoints found</p></div>';
         return;
     }
-    elements.endpointsList.innerHTML = endpoints.map((endpoint, index) => `
-        <div class="endpoint-item" data-method="${endpoint.method}">
+    // Use DocumentFragment for faster DOM insertion
+    const fragment = document.createDocumentFragment();
+    endpoints.forEach((endpoint, index) => {
+        const div = document.createElement('div');
+        div.className = 'endpoint-item';
+        div.dataset.method = endpoint.method;
+        div.innerHTML = `
             <div class="endpoint-header">
                 <span class="method-badge ${endpoint.method}">${endpoint.method}</span>
                 <span class="endpoint-path">${escapeHtml(endpoint.path)}</span>
@@ -263,8 +272,11 @@ function renderEndpoints(endpoints) {
                     <i class="fas fa-code"></i> View Templates
                 </button>
             </div>
-        </div>
-    `).join('');
+        `;
+        fragment.appendChild(div);
+    });
+    elements.endpointsList.innerHTML = '';
+    elements.endpointsList.appendChild(fragment);
 }
 
 // ========================================
@@ -345,11 +357,15 @@ function handleSearch(event) {
         renderAPIList(allAPIs);
         return;
     }
-    const filtered = allAPIs.filter(api => 
-        api.name.toLowerCase().includes(query) ||
-        (api.baseUrl && api.baseUrl.toLowerCase().includes(query))
-    );
-    renderAPIList(filtered);
+    // Debounce search for better performance
+    clearTimeout(handleSearch.timeout);
+    handleSearch.timeout = setTimeout(() => {
+        const filtered = allAPIs.filter(api => 
+            api.name.toLowerCase().includes(query) ||
+            (api.baseUrl && api.baseUrl.toLowerCase().includes(query))
+        );
+        renderAPIList(filtered);
+    }, 300);
 }
 
 function handleAuthFilter(event) {

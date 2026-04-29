@@ -6,8 +6,34 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3002;
 
+// Performance optimizations
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
+app.disable('x-powered-by');
+
+// Cache for registry and API details
+let registryCache = null;
+let registryCacheTime = 0;
+const CACHE_TTL = 60000; // 60 seconds
+
+function getRegistry() {
+    const now = Date.now();
+    if (registryCache && (now - registryCacheTime) < CACHE_TTL) {
+        return registryCache;
+    }
+    
+    try {
+        const registryPath = path.join(__dirname, '..', 'registry', 'global_index.json');
+        if (fs.existsSync(registryPath)) {
+            registryCache = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
+            registryCacheTime = now;
+            return registryCache;
+        }
+    } catch (error) {
+        console.error('Cache error:', error.message);
+    }
+    return null;
+}
 
 // Simple test endpoint
 app.get('/', (req, res) => {
@@ -34,40 +60,10 @@ app.get('/', (req, res) => {
 // Get all APIs
 app.get('/apis', (req, res) => {
     try {
-        const registryPath = path.join(__dirname, '..', 'registry', 'global_index.json');
+        const globalIndex = getRegistry();
         
-        if (fs.existsSync(registryPath)) {
-            const data = fs.readFileSync(registryPath, 'utf8');
-            const globalIndex = JSON.parse(data);
-            
-            let apis = globalIndex.apis || [];
-            
-            // Apply category filter if provided
-            const { category } = req.query;
-            if (category && category !== '') {
-                apis = apis.filter(api => 
-                    api.category && api.category.toLowerCase() === category.toLowerCase()
-                );
-            }
-            
-            // Get unique categories for frontend
-            const allCategories = [...new Set(
-                (globalIndex.apis || [])
-                    .map(api => api.category)
-                    .filter(cat => cat)
-            )].sort();
-            
-            res.json({
-                success: true,
-                count: apis.length,
-                totalCount: globalIndex.apis?.length || 0,
-                apis: apis,
-                categories: allCategories,
-                appliedFilter: category || null,
-                timestamp: new Date().toISOString()
-            });
-        } else {
-            res.json({
+        if (!globalIndex) {
+            return res.json({
                 success: true,
                 count: 0,
                 totalCount: 0,
@@ -76,6 +72,33 @@ app.get('/apis', (req, res) => {
                 message: 'No registry file found'
             });
         }
+        
+        let apis = globalIndex.apis || [];
+        
+        // Apply category filter if provided
+        const { category } = req.query;
+        if (category && category !== '') {
+            apis = apis.filter(api => 
+                api.category && api.category.toLowerCase() === category.toLowerCase()
+            );
+        }
+        
+        // Get unique categories for frontend
+        const allCategories = [...new Set(
+            (globalIndex.apis || [])
+                .map(api => api.category)
+                .filter(cat => cat)
+        )].sort();
+        
+        res.json({
+            success: true,
+            count: apis.length,
+            totalCount: globalIndex.apis?.length || 0,
+            apis: apis,
+            categories: allCategories,
+            appliedFilter: category || null,
+            timestamp: new Date().toISOString()
+        });
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -88,39 +111,36 @@ app.get('/apis', (req, res) => {
 // Get available categories
 app.get('/categories', (req, res) => {
     try {
-        const registryPath = path.join(__dirname, '..', 'registry', 'global_index.json');
+        const globalIndex = getRegistry();
         
-        if (fs.existsSync(registryPath)) {
-            const data = fs.readFileSync(registryPath, 'utf8');
-            const globalIndex = JSON.parse(data);
-            
-            // Extract unique categories
-            const categories = [...new Set(
-                (globalIndex.apis || [])
-                    .map(api => api.category)
-                    .filter(cat => cat)
-            )].sort();
-            
-            // Count APIs per category
-            const categoryStats = {};
-            categories.forEach(category => {
-                categoryStats[category] = globalIndex.apis.filter(api => api.category === category).length;
-            });
-            
-            res.json({
-                success: true,
-                categories: categories,
-                stats: categoryStats,
-                total: categories.length
-            });
-        } else {
-            res.json({
+        if (!globalIndex) {
+            return res.json({
                 success: true,
                 categories: [],
                 stats: {},
                 total: 0
             });
         }
+        
+        // Extract unique categories
+        const categories = [...new Set(
+            (globalIndex.apis || [])
+                .map(api => api.category)
+                .filter(cat => cat)
+        )].sort();
+        
+        // Count APIs per category
+        const categoryStats = {};
+        categories.forEach(category => {
+            categoryStats[category] = globalIndex.apis.filter(api => api.category === category).length;
+        });
+        
+        res.json({
+            success: true,
+            categories: categories,
+            stats: categoryStats,
+            total: categories.length
+        });
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -255,21 +275,15 @@ app.post('/agent/tools/search', (req, res) => {
             });
         }
         
-        console.log(`[AGENT-SEARCH] Query: "${query}"`);
-        
-        // Load registry
-        const registryPath = path.join(__dirname, '..', 'registry', 'global_index.json');
-        if (!fs.existsSync(registryPath)) {
+        const registry = getRegistry();
+        if (!registry) {
             return res.status(500).json({
                 success: false,
                 error: 'Registry not found'
             });
         }
         
-        const registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
         const apis = registry.apis || [];
-        
-        // Simple keyword matching
         const queryLower = query.toLowerCase();
         const queryWords = queryLower.split(/\s+/);
         
@@ -279,66 +293,56 @@ app.post('/agent/tools/search', (req, res) => {
             const apiPath = path.join(__dirname, '..', 'apis', api.id, 'openapi.json');
             if (!fs.existsSync(apiPath)) continue;
             
-            const openapi = JSON.parse(fs.readFileSync(apiPath, 'utf8'));
-            
-            if (openapi.paths) {
-                for (const [pathStr, pathObj] of Object.entries(openapi.paths)) {
-                    for (const [method, methodObj] of Object.entries(pathObj)) {
-                        if (!['get', 'post', 'put', 'delete', 'patch'].includes(method.toLowerCase())) continue;
-                        
-                        const summary = (methodObj.summary || '').toLowerCase();
-                        const description = (methodObj.description || '').toLowerCase();
-                        const searchText = `${api.name} ${pathStr} ${method} ${summary} ${description}`.toLowerCase();
-                        
-                        // Calculate match score
-                        let score = 0;
-                        for (const word of queryWords) {
-                            if (searchText.includes(word)) {
-                                score += 1;
+            try {
+                const openapi = JSON.parse(fs.readFileSync(apiPath, 'utf8'));
+                
+                if (openapi.paths) {
+                    for (const [pathStr, pathObj] of Object.entries(openapi.paths)) {
+                        for (const [method, methodObj] of Object.entries(pathObj)) {
+                            if (!['get', 'post', 'put', 'delete', 'patch'].includes(method.toLowerCase())) continue;
+                            
+                            const summary = (methodObj.summary || '').toLowerCase();
+                            const description = (methodObj.description || '').toLowerCase();
+                            const searchText = `${api.name} ${pathStr} ${method} ${summary} ${description}`.toLowerCase();
+                            
+                            let score = 0;
+                            for (const word of queryWords) {
+                                if (searchText.includes(word)) score += 1;
                             }
-                        }
-                        
-                        if (score > 0) {
-                            matches.push({
-                                score: score,
-                                apiName: api.name,
-                                apiId: api.id,
-                                endpoint: {
-                                    method: method.toUpperCase(),
-                                    path: pathStr,
-                                    summary: methodObj.summary || '',
-                                    description: methodObj.description || ''
-                                }
-                            });
+                            
+                            if (score > 0) {
+                                matches.push({
+                                    score: score,
+                                    apiName: api.name,
+                                    apiId: api.id,
+                                    endpoint: {
+                                        method: method.toUpperCase(),
+                                        path: pathStr,
+                                        summary: methodObj.summary || '',
+                                        description: methodObj.description || ''
+                                    }
+                                });
+                            }
                         }
                     }
                 }
+            } catch (e) {
+                // Skip files that can't be parsed
             }
         }
         
-        // Sort by score and return top 3
         matches.sort((a, b) => b.score - a.score);
         const topMatches = matches.slice(0, 3);
         
-        if (topMatches.length > 0) {
-            res.json({
-                success: true,
-                query: query,
-                matches: topMatches,
-                timestamp: new Date().toISOString()
-            });
-        } else {
-            res.json({
-                success: false,
-                query: query,
-                message: 'No matching endpoints found',
-                suggestion: 'Try queries like "get users", "create pet", "list items"',
-                timestamp: new Date().toISOString()
-            });
-        }
+        res.json({
+            success: topMatches.length > 0,
+            query: query,
+            matches: topMatches,
+            message: topMatches.length === 0 ? 'No matching endpoints found' : undefined,
+            timestamp: new Date().toISOString()
+        });
         
     } catch (error) {
-        console.error('[AGENT-SEARCH] Error:', error);
         res.status(500).json({
             success: false,
             error: 'Query processing failed',
@@ -359,21 +363,15 @@ app.post('/agent/query', (req, res) => {
             });
         }
         
-        console.log(`[AGENT] Query: "${query}"`);
-        
-        // Load registry
-        const registryPath = path.join(__dirname, '..', 'registry', 'global_index.json');
-        if (!fs.existsSync(registryPath)) {
+        const registry = getRegistry();
+        if (!registry) {
             return res.status(500).json({
                 success: false,
                 error: 'Registry not found'
             });
         }
         
-        const registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
         const apis = registry.apis || [];
-        
-        // Simple keyword matching
         const queryLower = query.toLowerCase();
         const queryWords = queryLower.split(/\s+/);
         
@@ -383,66 +381,56 @@ app.post('/agent/query', (req, res) => {
             const apiPath = path.join(__dirname, '..', 'apis', api.id, 'openapi.json');
             if (!fs.existsSync(apiPath)) continue;
             
-            const openapi = JSON.parse(fs.readFileSync(apiPath, 'utf8'));
-            
-            if (openapi.paths) {
-                for (const [pathStr, pathObj] of Object.entries(openapi.paths)) {
-                    for (const [method, methodObj] of Object.entries(pathObj)) {
-                        if (!['get', 'post', 'put', 'delete', 'patch'].includes(method.toLowerCase())) continue;
-                        
-                        const summary = (methodObj.summary || '').toLowerCase();
-                        const description = (methodObj.description || '').toLowerCase();
-                        const searchText = `${api.name} ${pathStr} ${method} ${summary} ${description}`.toLowerCase();
-                        
-                        // Calculate match score
-                        let score = 0;
-                        for (const word of queryWords) {
-                            if (searchText.includes(word)) {
-                                score += 1;
+            try {
+                const openapi = JSON.parse(fs.readFileSync(apiPath, 'utf8'));
+                
+                if (openapi.paths) {
+                    for (const [pathStr, pathObj] of Object.entries(openapi.paths)) {
+                        for (const [method, methodObj] of Object.entries(pathObj)) {
+                            if (!['get', 'post', 'put', 'delete', 'patch'].includes(method.toLowerCase())) continue;
+                            
+                            const summary = (methodObj.summary || '').toLowerCase();
+                            const description = (methodObj.description || '').toLowerCase();
+                            const searchText = `${api.name} ${pathStr} ${method} ${summary} ${description}`.toLowerCase();
+                            
+                            let score = 0;
+                            for (const word of queryWords) {
+                                if (searchText.includes(word)) score += 1;
                             }
-                        }
-                        
-                        if (score > 0) {
-                            matches.push({
-                                score: score,
-                                apiName: api.name,
-                                apiId: api.id,
-                                endpoint: {
-                                    method: method.toUpperCase(),
-                                    path: pathStr,
-                                    summary: methodObj.summary || '',
-                                    description: methodObj.description || ''
-                                }
-                            });
+                            
+                            if (score > 0) {
+                                matches.push({
+                                    score: score,
+                                    apiName: api.name,
+                                    apiId: api.id,
+                                    endpoint: {
+                                        method: method.toUpperCase(),
+                                        path: pathStr,
+                                        summary: methodObj.summary || '',
+                                        description: methodObj.description || ''
+                                    }
+                                });
+                            }
                         }
                     }
                 }
+            } catch (e) {
+                // Skip files that can't be parsed
             }
         }
         
-        // Sort by score and return top 3
         matches.sort((a, b) => b.score - a.score);
         const topMatches = matches.slice(0, 3);
         
-        if (topMatches.length > 0) {
-            res.json({
-                success: true,
-                query: query,
-                matches: topMatches,
-                timestamp: new Date().toISOString()
-            });
-        } else {
-            res.json({
-                success: false,
-                query: query,
-                message: 'No matching endpoints found',
-                suggestion: 'Try queries like "get users", "create pet", "list items"',
-                timestamp: new Date().toISOString()
-            });
-        }
+        res.json({
+            success: topMatches.length > 0,
+            query: query,
+            matches: topMatches,
+            message: topMatches.length === 0 ? 'No matching endpoints found' : undefined,
+            timestamp: new Date().toISOString()
+        });
         
     } catch (error) {
-        console.error('[AGENT] Error:', error);
         res.status(500).json({
             success: false,
             error: 'Query processing failed',
@@ -556,7 +544,5 @@ app.post('/agent/execute', async (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`🚀 API Explorer Backend running on port ${PORT}`);
-    console.log(`🚀 Server URL: http://localhost:${PORT}`);
     console.log(`📚 APIs loaded from registry`);
-    console.log(`🤖 Agent endpoints available`);
 });
