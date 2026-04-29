@@ -12,7 +12,7 @@
 const BASE_URL = (function() {
     const hostname = window.location.hostname;
     const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-    return isLocalhost ? 'http://localhost:3002' : 'https://gsoc-api-explorer.onrender.com';
+    return isLocalhost ? 'http://localhost:3000' : 'https://gsoc-api-explorer.onrender.com';
 })();
 
 const API_BASE_URL = BASE_URL;
