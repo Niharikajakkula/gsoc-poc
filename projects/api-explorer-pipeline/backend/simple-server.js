@@ -17,6 +17,33 @@ app.set('etag', false); // Disable etag for faster responses
 // Serve static files from frontend directory
 app.use(express.static(path.join(__dirname, '..', 'frontend')));
 
+// Image proxy endpoint to bypass CORS
+app.get('/proxy/image', async (req, res) => {
+    try {
+        const { url } = req.query;
+        if (!url) {
+            return res.status(400).json({ error: 'URL parameter required' });
+        }
+        
+        // Validate URL is from dog.ceo
+        if (!url.includes('dog.ceo')) {
+            return res.status(403).json({ error: 'Only dog.ceo images allowed' });
+        }
+        
+        const response = await fetch(url);
+        if (!response.ok) {
+            return res.status(response.status).json({ error: 'Failed to fetch image' });
+        }
+        
+        const buffer = await response.buffer();
+        res.set('Content-Type', response.headers.get('content-type'));
+        res.set('Access-Control-Allow-Origin', '*');
+        res.send(buffer);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Cache for registry and API details
 let registryCache = null;
 let registryCacheTime = 0;
