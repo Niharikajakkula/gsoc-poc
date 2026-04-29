@@ -453,8 +453,8 @@ app.post('/agent/query', (req, res) => {
     }
 });
 
-// Agent execute endpoint - simulate API execution
-app.post('/agent/execute', async (req, res) => {
+// Agent execute endpoint - return mock data for demo
+app.post('/agent/execute', (req, res) => {
     try {
         const { apiId, endpoint, testData } = req.body;
         
@@ -465,87 +465,35 @@ app.post('/agent/execute', async (req, res) => {
             });
         }
         
-        console.log(`[EXECUTE] ${endpoint.method} ${endpoint.path}`);
+        // Generate mock responses based on endpoint path
+        let mockData = {};
         
-        // Load API metadata
-        const metadataPath = path.join(__dirname, '..', 'apis', apiId, 'metadata.json');
-        if (!fs.existsSync(metadataPath)) {
-            return res.status(404).json({
-                success: false,
-                error: 'API metadata not found'
-            });
+        if (endpoint.path.includes('dog') || endpoint.path.includes('random')) {
+            mockData = { message: 'https://images.dog.ceo/breeds/retriever-golden/n02099601_1003.jpg' };
+        } else if (endpoint.path.includes('user')) {
+            mockData = { id: 1, name: 'John Doe', email: 'john@example.com', login: 'johndoe' };
+        } else if (endpoint.path.includes('pet') || endpoint.path.includes('create')) {
+            mockData = { id: 1, name: 'Fluffy', status: 'available', photoUrls: [] };
+        } else if (endpoint.path.includes('country') || endpoint.path.includes('countries')) {
+            mockData = { name: { common: 'United States', official: 'United States of America' }, capital: ['Washington, D.C.'] };
+        } else {
+            mockData = { success: true, data: 'Demo response', message: 'This is mock data for demonstration' };
         }
         
-        const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
-        const baseUrl = metadata.baseUrl || 'https://api.example.com';
-        const fullUrl = baseUrl + endpoint.path;
-        
-        // Build request
-        const requestOptions = {
-            method: endpoint.method,
-            headers: {
-                'Content-Type': 'application/json',
-                'User-Agent': 'API-Explorer/1.0'
+        res.json({
+            success: true,
+            request: {
+                url: endpoint.path,
+                method: endpoint.method,
+                note: 'Mock data for demonstration'
+            },
+            response: {
+                status: 200,
+                statusText: 'OK',
+                data: mockData,
+                time: 0
             }
-        };
-        
-        // Add auth headers
-        if (metadata.authType === 'apiKey') {
-            const keyName = metadata.authDetails?.name || 'X-API-Key';
-            requestOptions.headers[keyName] = 'DEMO_KEY';
-        } else if (metadata.authType === 'bearer') {
-            requestOptions.headers['Authorization'] = 'Bearer DEMO_TOKEN';
-        }
-        
-        // Add body for POST/PUT
-        if (['POST', 'PUT', 'PATCH'].includes(endpoint.method)) {
-            requestOptions.body = JSON.stringify(testData || { id: 1, name: 'Test' });
-        }
-        
-        try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000);
-            
-            const startTime = Date.now();
-            const response = await fetch(fullUrl, {
-                ...requestOptions,
-                signal: controller.signal
-            });
-            const endTime = Date.now();
-            
-            clearTimeout(timeoutId);
-            
-            let responseData;
-            const contentType = response.headers.get('content-type');
-            
-            if (contentType && contentType.includes('application/json')) {
-                responseData = await response.json();
-            } else {
-                responseData = await response.text();
-            }
-            
-            res.json({
-                success: true,
-                request: {
-                    url: fullUrl,
-                    method: endpoint.method,
-                    headers: requestOptions.headers
-                },
-                response: {
-                    status: response.status,
-                    statusText: response.statusText,
-                    data: responseData,
-                    time: endTime - startTime
-                }
-            });
-            
-        } catch (fetchError) {
-            res.status(500).json({
-                success: false,
-                error: 'Request failed',
-                message: fetchError.message
-            });
-        }
+        });
         
     } catch (error) {
         res.status(500).json({
