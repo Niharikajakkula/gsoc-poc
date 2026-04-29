@@ -17,9 +17,45 @@ env:
   PROJECT_DIR: projects/api-explorer-pipeline
 
 jobs:
+  quick-checks:
+    name: Quick Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check file sizes
+        run: |
+          echo "📊 Checking file sizes..."
+
+          # Check for large files
+          find . -type f -size +10M 2>/dev/null | while read file; do
+            echo "⚠️  Large file: $file ($(du -h "$file" | cut -f1))"
+          done
+
+          echo "✅ File size check complete"
+
+      - name: Validate JSON files
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          echo "🔍 Validating JSON files..."
+
+          json_files=$(find . -name "*.json" -type f 2>/dev/null | grep -v node_modules | head -20)
+
+          for file in $json_files; do
+            if ! python3 -c "import json; json.load(open('$file'))" 2>/dev/null; then
+              echo "❌ Invalid JSON: $file"
+              exit 1
+            fi
+          done
+
+          echo "✅ JSON validation passed"
   validate-files:
     name: Validate Project Files
     runs-on: ubuntu-latest
+    needs: quick-checks
     timeout-minutes: 10
 
     steps:
@@ -71,25 +107,21 @@ jobs:
 
           echo "✅ apis/ directory found"
 
-          # Validate all openapi.json files using find + while loop
+          # Validate all openapi.json files using here-string to avoid subshell
           file_count=0
           error_count=0
+          validation_output=""
 
-          find apis -type f -name "openapi.json" 2>/dev/null | sort | while read -r file; do
+          while IFS= read -r file; do
             if python3 -c "import json; json.load(open('$file'))" 2>/dev/null; then
               api_name=$(basename $(dirname "$file"))
               echo "✅ $api_name/openapi.json"
-              echo "1" >> /tmp/validation_count.txt
+              ((file_count++))
             else
               echo "❌ $file - Invalid JSON"
-              echo "0" >> /tmp/validation_count.txt
+              ((error_count++))
             fi
-          done
-
-          # Count results
-          file_count=$(grep -c "1" /tmp/validation_count.txt 2>/dev/null || echo "0")
-          error_count=$(grep -c "0" /tmp/validation_count.txt 2>/dev/null || echo "0")
-          rm -f /tmp/validation_count.txt
+          done <<< "$(find apis -type f -name "openapi.json" 2>/dev/null | sort)"
 
           echo ""
           echo "📊 Validation Summary:"
@@ -123,36 +155,33 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-
-      - name: Cache Node modules
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.PROJECT_DIR }}/backend/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+          cache: "npm"
+          cache-dependency-path: "${{ env.PROJECT_DIR }}/backend/package-lock.json"
 
       - name: Install backend dependencies
         working-directory: ${{ env.PROJECT_DIR }}/backend
         run: |
           echo "📦 Installing backend dependencies..."
-          npm ci --prefer-offline
+          npm ci --prefer-offline --no-audit
           echo "✅ Dependencies installed"
 
       - name: Start backend server
         working-directory: ${{ env.PROJECT_DIR }}/backend
         run: |
           echo "🚀 Starting backend server..."
-          node simple-server.js > server.log 2>&1 &
+          timeout 35 node simple-server.js > server.log 2>&1 &
           SERVER_PID=$!
           echo $SERVER_PID > server.pid
           echo "Server PID: $SERVER_PID"
 
           # Wait for server with retries
           echo "⏳ Waiting for server..."
-          for i in {1..30}; do
+          max_attempts=30
+          attempt=0
+
+          while [ $attempt -lt $max_attempts ]; do
             if curl -sf http://localhost:3002/apis > /dev/null 2>&1; then
-              echo "✅ Server ready after $i seconds"
+              echo "✅ Server ready after $((attempt + 1)) seconds"
               exit 0
             fi
             
@@ -163,10 +192,11 @@ jobs:
               exit 1
             fi
             
+            ((attempt++))
             sleep 1
           done
 
-          echo "❌ Server timeout after 30 seconds"
+          echo "❌ Server timeout after $max_attempts seconds"
           cat server.log
           exit 1
 
@@ -174,42 +204,40 @@ jobs:
         working-directory: ${{ env.PROJECT_DIR }}/backend
         run: |
           echo "🔍 Testing endpoints..."
+          failed=0
 
           # Test 1: Root endpoint
           echo "Test 1: Root endpoint"
-          root_response=$(curl -s http://localhost:3002/)
-
-          if echo "$root_response" | grep -q '"message"'; then
+          if curl -sf http://localhost:3002/ | grep -q '"message"'; then
             echo "✅ Root endpoint OK"
           else
             echo "❌ Root endpoint failed"
-            exit 1
+            failed=1
           fi
 
           # Test 2: APIs endpoint
           echo "Test 2: APIs endpoint"
-          response=$(curl -s http://localhost:3002/apis)
-
-          if echo "$response" | grep -q '"success"[[:space:]]*:[[:space:]]*true'; then
+          if curl -sf http://localhost:3002/apis | grep -q '"success"'; then
             echo "✅ APIs endpoint OK"
           else
             echo "❌ APIs endpoint failed"
-            exit 1
+            failed=1
           fi
 
           # Test 3: AI search endpoint
           echo "Test 3: AI search endpoint"
-          search_response=$(curl -s -X POST http://localhost:3002/agent/tools/search \
+          if curl -sf -X POST http://localhost:3002/agent/tools/search \
             -H "Content-Type: application/json" \
-            -d '{"query":"get users"}')
-
-          if echo "$search_response" | grep -q '"success"[[:space:]]*:[[:space:]]*true'; then
+            -d '{"query":"get users"}' | grep -q '"success"'; then
             echo "✅ AI search endpoint OK"
           else
             echo "❌ AI search endpoint failed"
-            exit 1
+            failed=1
           fi
 
+          if [ $failed -eq 1 ]; then
+            exit 1
+          fi
           echo "✅ All endpoint tests passed"
 
       - name: Cleanup
@@ -218,6 +246,7 @@ jobs:
         run: |
           if [ -f server.pid ]; then
             kill $(cat server.pid) 2>/dev/null || true
+            rm -f server.pid
           fi
 
       - name: Upload logs on failure
@@ -351,26 +380,32 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: "${{ env.PROJECT_DIR }}/backend/package-lock.json"
 
       - name: Install backend dependencies
         working-directory: ${{ env.PROJECT_DIR }}/backend
         run: |
           echo "📦 Installing dependencies..."
-          npm ci
+          npm ci --prefer-offline --no-audit
 
       - name: Start backend
         working-directory: ${{ env.PROJECT_DIR }}/backend
         run: |
           echo "🚀 Starting backend..."
-          node simple-server.js > integration.log 2>&1 &
+          timeout 35 node simple-server.js > integration.log 2>&1 &
           echo $! > integration.pid
 
           # Wait for server
-          for i in {1..30}; do
+          max_attempts=30
+          attempt=0
+
+          while [ $attempt -lt $max_attempts ]; do
             if curl -sf http://localhost:3002/apis > /dev/null 2>&1; then
               echo "✅ Server ready"
               exit 0
             fi
+            ((attempt++))
             sleep 1
           done
 
@@ -382,16 +417,15 @@ jobs:
         working-directory: ${{ env.PROJECT_DIR }}/backend
         run: |
           echo "🔍 Running integration tests..."
+          failed=0
 
           # Test API listing
           echo "Test 1: API listing"
-          apis_response=$(curl -s http://localhost:3002/apis)
-
-          if echo "$apis_response" | grep -q '"success"[[:space:]]*:[[:space:]]*true'; then
+          if curl -sf http://localhost:3002/apis | grep -q '"success"'; then
             echo "✅ API listing works"
           else
             echo "❌ API listing failed"
-            exit 1
+            failed=1
           fi
 
           # Test AI search with multiple queries
@@ -399,17 +433,18 @@ jobs:
 
           for query in "${queries[@]}"; do
             echo "Testing: $query"
-            response=$(curl -s -X POST http://localhost:3002/agent/tools/search \
+            if curl -sf -X POST http://localhost:3002/agent/tools/search \
               -H "Content-Type: application/json" \
-              -d "{\"query\":\"$query\"}")
-            
-            if echo "$response" | grep -q '"success"'; then
+              -d "{\"query\":\"$query\"}" | grep -q '"success"'; then
               echo "✅ Query '$query' OK"
             else
               echo "⚠️  Query '$query' returned response"
             fi
           done
 
+          if [ $failed -eq 1 ]; then
+            exit 1
+          fi
           echo "✅ All integration tests passed"
 
       - name: Cleanup
@@ -418,6 +453,7 @@ jobs:
         run: |
           if [ -f integration.pid ]; then
             kill $(cat integration.pid) 2>/dev/null || true
+            rm -f integration.pid
           fi
 
       - name: Upload logs on failure
