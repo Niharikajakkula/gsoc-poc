@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API Explorer - Connection Test</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        padding: 40px;
+        max-width: 600px;
+        width: 100%;
+      }
+
+      h1 {
+        color: #333;
+        margin-bottom: 30px;
+        text-align: center;
+      }
+
+      .test-item {
+        margin-bottom: 20px;
+        padding: 15px;
+        border-radius: 8px;
+        background: #f5f5f5;
+        border-left: 4px solid #ccc;
+      }
+
+      .test-item.success {
+        background: #d4edda;
+        border-left-color: #28a745;
+      }
+
+      .test-item.error {
+        background: #f8d7da;
+        border-left-color: #dc3545;
+      }
+
+      .test-item.loading {
+        background: #fff3cd;
+        border-left-color: #ffc107;
+      }
+
+      .test-label {
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: #333;
+      }
+
+      .test-result {
+        font-size: 14px;
+        color: #666;
+        font-family: "Courier New", monospace;
+      }
+
+      .status-icon {
+        margin-right: 8px;
+      }
+
+      button {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-top: 20px;
+        width: 100%;
+        transition: background 0.3s;
+      }
+
+      button:hover {
+        background: #5568d3;
+      }
+
+      button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🔍 API Explorer - Connection Test</h1>
+
+      <div id="test-1" class="test-item loading">
+        <div class="test-label">
+          <span class="status-icon">⏳</span>Test 1: Configuration
+        </div>
+        <div class="test-result" id="test-1-result">Checking...</div>
+      </div>
+
+      <div id="test-2" class="test-item loading">
+        <div class="test-label">
+          <span class="status-icon">⏳</span>Test 2: Backend Connection
+        </div>
+        <div class="test-result" id="test-2-result">Checking...</div>
+      </div>
+
+      <div id="test-3" class="test-item loading">
+        <div class="test-label">
+          <span class="status-icon">⏳</span>Test 3: /apis Endpoint
+        </div>
+        <div class="test-result" id="test-3-result">Checking...</div>
+      </div>
+
+      <div id="test-4" class="test-item loading">
+        <div class="test-label">
+          <span class="status-icon">⏳</span>Test 4: /categories Endpoint
+        </div>
+        <div class="test-result" id="test-4-result">Checking...</div>
+      </div>
+
+      <button onclick="runTests()" id="test-btn">Run Tests</button>
+    </div>
+
+    <script>
+      // Configuration
+      const BASE_URL = (function () {
+        const hostname = window.location.hostname;
+        const isLocalhost =
+          hostname === "localhost" || hostname === "127.0.0.1";
+        return isLocalhost
+          ? "http://localhost:3002"
+          : "https://gsoc-api-explorer.onrender.com";
+      })();
+
+      const API_BASE_URL = BASE_URL;
+
+      function updateTest(testNum, status, message) {
+        const element = document.getElementById(`test-${testNum}`);
+        const result = document.getElementById(`test-${testNum}-result`);
+
+        element.className = `test-item ${status}`;
+        const icon =
+          status === "success" ? "✅" : status === "error" ? "❌" : "⏳";
+        result.textContent = `${icon} ${message}`;
+      }
+
+      async function runTests() {
+        document.getElementById("test-btn").disabled = true;
+
+        // Test 1: Configuration
+        updateTest(1, "loading", "Checking configuration...");
+        setTimeout(() => {
+          updateTest(1, "success", `API_BASE_URL: ${API_BASE_URL}`);
+        }, 500);
+
+        // Test 2: Backend Connection
+        updateTest(2, "loading", "Connecting to backend...");
+        try {
+          const response = await fetch(`${API_BASE_URL}/`);
+          if (response.ok) {
+            const data = await response.json();
+            updateTest(2, "success", `Connected! Version: ${data.version}`);
+          } else {
+            updateTest(2, "error", `HTTP ${response.status}`);
+          }
+        } catch (error) {
+          updateTest(2, "error", `Connection failed: ${error.message}`);
+        }
+
+        // Test 3: /apis Endpoint
+        updateTest(3, "loading", "Fetching APIs...");
+        try {
+          const response = await fetch(`${API_BASE_URL}/apis`);
+          if (response.ok) {
+            const data = await response.json();
+            updateTest(
+              3,
+              "success",
+              `✅ ${data.count} APIs loaded (${data.totalCount} total)`,
+            );
+          } else {
+            updateTest(3, "error", `HTTP ${response.status}`);
+          }
+        } catch (error) {
+          updateTest(3, "error", `Failed: ${error.message}`);
+        }
+
+        // Test 4: /categories Endpoint
+        updateTest(4, "loading", "Fetching categories...");
+        try {
+          const response = await fetch(`${API_BASE_URL}/categories`);
+          if (response.ok) {
+            const data = await response.json();
+            updateTest(
+              4,
+              "success",
+              `✅ ${data.categories.length} categories: ${data.categories.join(", ")}`,
+            );
+          } else {
+            updateTest(4, "error", `HTTP ${response.status}`);
+          }
+        } catch (error) {
+          updateTest(4, "error", `Failed: ${error.message}`);
+        }
+
+        document.getElementById("test-btn").disabled = false;
+      }
+
+      // Auto-run tests on load
+      window.addEventListener("load", runTests);
+    </script>
+  </body>
+</html>

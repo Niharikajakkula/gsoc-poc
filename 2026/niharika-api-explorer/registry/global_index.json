@@ -1,0 +1,275 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "lastUpdated": "2026-04-28T23:27:21.167128",
+    "totalAPIs": 12,
+    "totalEndpoints": 48,
+    "generatedBy": "API Explorer Pipeline v1.0",
+    "pipelineInfo": {
+      "source": "OpenAPI Specifications",
+      "processedVia": "Python Pipeline (parser.py, batch_processor.py, registry_manager.py)",
+      "semanticSearch": "Enabled via embeddings.json"
+    }
+  },
+  "apis": [
+    {
+      "id": "048fb1a3bf14",
+      "name": "Pet Store API",
+      "baseUrl": "https://petstore.swagger.io/v2",
+      "authType": "none",
+      "authDetails": {},
+      "endpointCount": 7,
+      "lastUpdated": "2026-04-28T23:27:10.342175",
+      "version": "1.0.0",
+      "description": "Complete REST API for managing pets, orders, and inventory in a pet store",
+      "category": "General",
+      "tags": [
+        "Pets",
+        "Orders",
+        "Inventory",
+        "CRUD",
+        "REST"
+      ],
+      "rating": 4.7,
+      "reviews": []
+    },
+    {
+      "id": "0e1d358dbd5f",
+      "name": "OpenWeatherMap API",
+      "baseUrl": "https://api.openweathermap.org/data/2.5",
+      "authType": "apiKey",
+      "authDetails": {
+        "type": "apiKey",
+        "name": "appid",
+        "in": "query",
+        "schemeName": "ApiKeyAuth"
+      },
+      "endpointCount": 3,
+      "lastUpdated": "2026-04-28T23:27:10.985911",
+      "version": "1.0.0",
+      "description": "Real-time weather data, forecasts, and historical weather for any location worldwide",
+      "category": "Weather",
+      "tags": [
+        "Weather",
+        "Forecast",
+        "Real-time",
+        "Climate",
+        "Location"
+      ],
+      "rating": 4.4,
+      "reviews": []
+    },
+    {
+      "id": "1c8d3d6ccffb",
+      "name": "OpenAI API",
+      "baseUrl": "https://api.openai.com/v1",
+      "authType": "bearer",
+      "authDetails": {
+        "type": "http",
+        "scheme": "bearer",
+        "schemeName": "BearerAuth"
+      },
+      "endpointCount": 4,
+      "lastUpdated": "2026-04-28T23:27:12.777806",
+      "version": "1.0.0",
+      "description": "OpenAI GPT models for chat completions, embeddings, and image generation",
+      "category": "AI",
+      "tags": [
+        "ChatGPT",
+        "LLM",
+        "Embeddings",
+        "Image Generation",
+        "NLP"
+      ],
+      "rating": 4.8,
+      "reviews": []
+    },
+    {
+      "id": "2c4728104c72",
+      "name": "REST Countries API",
+      "baseUrl": "https://restcountries.com/v3.1",
+      "authType": "none",
+      "authDetails": {},
+      "endpointCount": 4,
+      "lastUpdated": "2026-04-28T23:27:12.975840",
+      "version": "1.0.0",
+      "description": "Get comprehensive information about countries including borders, languages, currencies, and more",
+      "category": "General",
+      "tags": [
+        "Countries",
+        "Geography",
+        "Data",
+        "Public",
+        "Free"
+      ],
+      "rating": 4.2,
+      "reviews": []
+    },
+    {
+      "id": "5dd12d06a2c9",
+      "name": "GitHub REST API",
+      "baseUrl": "https://api.github.com",
+      "authType": "bearer",
+      "authDetails": {
+        "type": "http",
+        "scheme": "bearer",
+        "schemeName": "BearerAuth"
+      },
+      "endpointCount": 5,
+      "lastUpdated": "2026-04-28T23:27:15.652857",
+      "version": "1.0.0",
+      "description": "Access GitHub repositories, users, issues, pull requests, and project management features",
+      "category": "Social",
+      "tags": [
+        "GitHub",
+        "Repositories",
+        "Issues",
+        "Collaboration",
+        "DevOps"
+      ],
+      "rating": 4.6,
+      "reviews": []
+    },
+    {
+      "id": "5ddfca7c614a",
+      "name": "JSONPlaceholder API",
+      "baseUrl": "https://jsonplaceholder.typicode.com",
+      "authType": "none",
+      "authDetails": {},
+      "endpointCount": 8,
+      "lastUpdated": "2026-04-28T23:27:15.932732",
+      "version": "1.0.0",
+      "description": "Free fake REST API for testing and prototyping with real working endpoints",
+      "category": "Social",
+      "tags": [
+        "Testing",
+        "Prototyping",
+        "Mock Data",
+        "Posts",
+        "Users"
+      ],
+      "rating": 4.3,
+      "reviews": []
+    },
+    {
+      "id": "abf9cb62b5c9",
+      "name": "Dog CEO API",
+      "baseUrl": "https://dog.ceo/api",
+      "authType": "none",
+      "authDetails": {},
+      "endpointCount": 4,
+      "lastUpdated": "2026-04-28T23:27:16.920561",
+      "version": "1.0.0",
+      "description": "Free public API for random dog images and breed information — no authentication required",
+      "category": "General",
+      "tags": [
+        "Images",
+        "Dogs",
+        "Breeds",
+        "Random",
+        "Public"
+      ],
+      "rating": 4.5,
+      "reviews": []
+    },
+    {
+      "id": "b30c75f6e9bc",
+      "name": "E-commerce Store API",
+      "baseUrl": "https://api.shopify.com/v1",
+      "authType": "apiKey",
+      "authDetails": {
+        "type": "apiKey",
+        "name": "X-Shop-Token",
+        "in": "header",
+        "schemeName": "ApiKeyAuth"
+      },
+      "endpointCount": 5,
+      "lastUpdated": "2026-04-28T23:27:17.499930",
+      "version": "1.0.0",
+      "description": "Complete e-commerce platform API for managing products, orders, cart, and payment processing",
+      "category": "Finance",
+      "tags": [
+        "E-commerce",
+        "Shopping",
+        "Payments",
+        "Orders",
+        "Products"
+      ],
+      "rating": 4.4,
+      "reviews": []
+    },
+    {
+      "id": "d676d7c575a9",
+      "name": "User Management API",
+      "baseUrl": "https://api.example.com/v1",
+      "authType": "apiKey",
+      "authDetails": {
+        "type": "apiKey",
+        "name": "X-API-Key",
+        "in": "header",
+        "schemeName": "ApiKeyAuth"
+      },
+      "endpointCount": 3,
+      "lastUpdated": "2026-04-28T23:27:19.134018",
+      "version": "1.0.0",
+      "description": "REST API for user authentication, profile management, and access control",
+      "category": "Social",
+      "tags": [
+        "Users",
+        "Authentication",
+        "Profiles",
+        "Security",
+        "Access Control"
+      ],
+      "rating": 4.1,
+      "reviews": []
+    },
+    {
+      "id": "46c171f99ca3",
+      "name": "JWT Auth API",
+      "baseUrl": "https://api.example.com/v1",
+      "authType": "bearer",
+      "authDetails": {
+        "type": "http",
+        "scheme": "bearer",
+        "schemeName": "BearerAuth",
+        "bearerFormat": "JWT"
+      },
+      "endpointCount": 3,
+      "lastUpdated": "2026-04-28T23:27:14.568763",
+      "version": "1.0.0",
+      "description": "Secure API with JWT-based authentication for protected endpoints",
+      "category": "Social",
+      "tags": [
+        "JWT",
+        "Security",
+        "Authentication",
+        "Tokens",
+        "Protected"
+      ],
+      "rating": 4.2,
+      "reviews": []
+    },
+    {
+      "id": "f893136697cd",
+      "name": "Public Data API",
+      "baseUrl": "https://public-api.example.com",
+      "authType": "none",
+      "authDetails": {},
+      "endpointCount": 1,
+      "lastUpdated": "2026-04-28T23:27:21.164875",
+      "version": "1.0.0",
+      "description": "Simple public API for accessing open data without authentication",
+      "category": "General",
+      "tags": [
+        "Public",
+        "Data",
+        "Open",
+        "Free",
+        "Simple"
+      ],
+      "rating": 4.0,
+      "reviews": []
+    }
+  ]
+}
