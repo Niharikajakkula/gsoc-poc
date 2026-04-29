@@ -82,7 +82,7 @@ function setupEventListeners() {
         btn.addEventListener('click', handleMethodFilter);
     });
     document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', handleTabSwitch);
+        btn.addEventListener('click', (e) => switchTab(e.target.dataset.tab));
     });
     if (elements.templateModal) {
         elements.templateModal.addEventListener('click', (e) => {
