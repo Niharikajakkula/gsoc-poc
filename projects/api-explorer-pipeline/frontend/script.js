@@ -433,36 +433,88 @@ async function queryAgentMCP() {
         if (typingDiv) typingDiv.style.display = 'block';
         if (responseDiv) responseDiv.style.display = 'none';
         
-        const response = await fetch(`${API_BASE_URL}/agent/tools/search`, {
+        // First, search for matching endpoints
+        const searchResponse = await fetch(`${API_BASE_URL}/agent/tools/search`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ query })
         });
         
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
+        if (!searchResponse.ok) throw new Error(`HTTP ${searchResponse.status}`);
+        const searchData = await searchResponse.json();
         
         if (typingDiv) typingDiv.style.display = 'none';
         
         const contentDiv = document.getElementById('ai-response-content');
         
-        if (data.success && data.matches && data.matches.length > 0) {
-            let html = '';
-            data.matches.forEach(match => {
-                html += `
-                    <div style="margin-bottom: 12px; padding: 10px; background: #f5f5f5; border-radius: 6px;">
-                        <div style="font-weight: bold; color: #333;">${escapeHtml(match.apiName)}</div>
-                        <div style="font-family: monospace; color: #666; margin: 4px 0;">
-                            <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px;">${match.endpoint.method}</span>
-                            ${escapeHtml(match.endpoint.path)}
-                        </div>
-                        ${match.endpoint.summary ? `<div style="font-size: 12px; color: #999;">${escapeHtml(match.endpoint.summary)}</div>` : ''}
+        if (searchData.success && searchData.matches && searchData.matches.length > 0) {
+            // Get the first match and try to execute it
+            const match = searchData.matches[0];
+            let html = `
+                <div style="margin-bottom: 12px; padding: 10px; background: #f5f5f5; border-radius: 6px;">
+                    <div style="font-weight: bold; color: #333; margin-bottom: 8px;">📍 Found: ${escapeHtml(match.apiName)}</div>
+                    <div style="font-family: monospace; color: #666; margin: 4px 0; font-size: 12px;">
+                        <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px;">${match.endpoint.method}</span>
+                        ${escapeHtml(match.endpoint.path)}
                     </div>
-                `;
-            });
+                </div>
+            `;
+            
+            // Try to execute the endpoint
+            try {
+                const executeResponse = await fetch(`${API_BASE_URL}/agent/execute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        apiId: match.apiId,
+                        endpoint: match.endpoint,
+                        testData: {}
+                    })
+                });
+                
+                if (executeResponse.ok) {
+                    const executeData = await executeResponse.json();
+                    if (executeData.success && executeData.response) {
+                        const responseData = executeData.response.data;
+                        
+                        // Format the response based on type
+                        if (typeof responseData === 'object') {
+                            // Check if it's a dog image API response
+                            if (responseData.message && responseData.message.includes('http')) {
+                                html += `
+                                    <div style="margin-top: 12px; padding: 12px; background: white; border-radius: 6px; border: 1px solid #ddd;">
+                                        <div style="font-weight: bold; margin-bottom: 8px; color: #333;">🐕 Dog Image:</div>
+                                        <img src="${escapeHtml(responseData.message)}" style="max-width: 100%; height: auto; border-radius: 4px; max-height: 200px;">
+                                        <div style="font-size: 11px; color: #999; margin-top: 8px; word-break: break-all;">${escapeHtml(responseData.message)}</div>
+                                    </div>
+                                `;
+                            } else {
+                                // Generic JSON response
+                                html += `
+                                    <div style="margin-top: 12px; padding: 12px; background: white; border-radius: 6px; border: 1px solid #ddd;">
+                                        <div style="font-weight: bold; margin-bottom: 8px; color: #333;">📊 Response:</div>
+                                        <pre style="background: #f5f5f5; padding: 8px; border-radius: 4px; font-size: 11px; overflow-x: auto; max-height: 150px;">${JSON.stringify(responseData, null, 2)}</pre>
+                                    </div>
+                                `;
+                            }
+                        } else if (typeof responseData === 'string') {
+                            html += `
+                                <div style="margin-top: 12px; padding: 12px; background: white; border-radius: 6px; border: 1px solid #ddd;">
+                                    <div style="font-weight: bold; margin-bottom: 8px; color: #333;">📄 Response:</div>
+                                    <div style="font-size: 12px; color: #666; word-break: break-word;">${escapeHtml(responseData)}</div>
+                                </div>
+                            `;
+                        }
+                    }
+                }
+            } catch (execError) {
+                // If execution fails, just show the endpoint info
+                html += `<div style="margin-top: 8px; font-size: 11px; color: #999;">Could not execute endpoint</div>`;
+            }
+            
             if (contentDiv) contentDiv.innerHTML = html;
         } else {
-            if (contentDiv) contentDiv.innerHTML = '<p style="color: #999;">No matching endpoints found. Try: "get users", "create pet", "list items"</p>';
+            if (contentDiv) contentDiv.innerHTML = '<p style="color: #999;">No matching endpoints found. Try: "get users", "create pet", "list items", "get random dog image"</p>';
         }
         
         if (responseDiv) responseDiv.style.display = 'block';
@@ -494,36 +546,88 @@ async function queryAgentMCPFullscreen() {
         if (typingDiv) typingDiv.style.display = 'block';
         if (responseDiv) responseDiv.style.display = 'none';
         
-        const response = await fetch(`${API_BASE_URL}/agent/tools/search`, {
+        // First, search for matching endpoints
+        const searchResponse = await fetch(`${API_BASE_URL}/agent/tools/search`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ query })
         });
         
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
+        if (!searchResponse.ok) throw new Error(`HTTP ${searchResponse.status}`);
+        const searchData = await searchResponse.json();
         
         if (typingDiv) typingDiv.style.display = 'none';
         
         const contentDiv = document.getElementById('ai-fullscreen-response-content');
         
-        if (data.success && data.matches && data.matches.length > 0) {
-            let html = '';
-            data.matches.forEach(match => {
-                html += `
-                    <div style="margin-bottom: 12px; padding: 10px; background: #f5f5f5; border-radius: 6px;">
-                        <div style="font-weight: bold; color: #333;">${escapeHtml(match.apiName)}</div>
-                        <div style="font-family: monospace; color: #666; margin: 4px 0;">
-                            <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px;">${match.endpoint.method}</span>
-                            ${escapeHtml(match.endpoint.path)}
-                        </div>
-                        ${match.endpoint.summary ? `<div style="font-size: 12px; color: #999;">${escapeHtml(match.endpoint.summary)}</div>` : ''}
+        if (searchData.success && searchData.matches && searchData.matches.length > 0) {
+            // Get the first match and try to execute it
+            const match = searchData.matches[0];
+            let html = `
+                <div style="margin-bottom: 16px; padding: 14px; background: #f5f5f5; border-radius: 8px; border-left: 4px solid #5b7cfa;">
+                    <div style="font-weight: bold; color: #333; margin-bottom: 10px; font-size: 16px;">📍 Found: ${escapeHtml(match.apiName)}</div>
+                    <div style="font-family: monospace; color: #666; margin: 6px 0; font-size: 14px;">
+                        <span style="background: #e0e0e0; padding: 4px 8px; border-radius: 4px; font-weight: bold;">${match.endpoint.method}</span>
+                        ${escapeHtml(match.endpoint.path)}
                     </div>
-                `;
-            });
+                </div>
+            `;
+            
+            // Try to execute the endpoint
+            try {
+                const executeResponse = await fetch(`${API_BASE_URL}/agent/execute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        apiId: match.apiId,
+                        endpoint: match.endpoint,
+                        testData: {}
+                    })
+                });
+                
+                if (executeResponse.ok) {
+                    const executeData = await executeResponse.json();
+                    if (executeData.success && executeData.response) {
+                        const responseData = executeData.response.data;
+                        
+                        // Format the response based on type
+                        if (typeof responseData === 'object') {
+                            // Check if it's a dog image API response
+                            if (responseData.message && responseData.message.includes('http')) {
+                                html += `
+                                    <div style="margin-top: 16px; padding: 16px; background: white; border-radius: 8px; border: 2px solid #ddd;">
+                                        <div style="font-weight: bold; margin-bottom: 12px; color: #333; font-size: 16px;">🐕 Dog Image:</div>
+                                        <img src="${escapeHtml(responseData.message)}" style="max-width: 100%; height: auto; border-radius: 6px; max-height: 400px; display: block; margin-bottom: 12px;">
+                                        <div style="font-size: 12px; color: #999; word-break: break-all; font-family: monospace;">${escapeHtml(responseData.message)}</div>
+                                    </div>
+                                `;
+                            } else {
+                                // Generic JSON response
+                                html += `
+                                    <div style="margin-top: 16px; padding: 16px; background: white; border-radius: 8px; border: 2px solid #ddd;">
+                                        <div style="font-weight: bold; margin-bottom: 12px; color: #333; font-size: 16px;">📊 Response:</div>
+                                        <pre style="background: #f5f5f5; padding: 12px; border-radius: 6px; font-size: 13px; overflow-x: auto; max-height: 300px; border: 1px solid #ddd;">${JSON.stringify(responseData, null, 2)}</pre>
+                                    </div>
+                                `;
+                            }
+                        } else if (typeof responseData === 'string') {
+                            html += `
+                                <div style="margin-top: 16px; padding: 16px; background: white; border-radius: 8px; border: 2px solid #ddd;">
+                                    <div style="font-weight: bold; margin-bottom: 12px; color: #333; font-size: 16px;">📄 Response:</div>
+                                    <div style="font-size: 14px; color: #666; word-break: break-word;">${escapeHtml(responseData)}</div>
+                                </div>
+                            `;
+                        }
+                    }
+                }
+            } catch (execError) {
+                // If execution fails, just show the endpoint info
+                html += `<div style="margin-top: 12px; font-size: 12px; color: #999;">Could not execute endpoint</div>`;
+            }
+            
             if (contentDiv) contentDiv.innerHTML = html;
         } else {
-            if (contentDiv) contentDiv.innerHTML = '<p style="color: #999;">No matching endpoints found. Try: "get users", "create pet", "list items"</p>';
+            if (contentDiv) contentDiv.innerHTML = '<p style="color: #999; font-size: 16px;">No matching endpoints found. Try: "get users", "create pet", "list items", "get random dog image"</p>';
         }
         
         if (responseDiv) responseDiv.style.display = 'block';
@@ -532,7 +636,7 @@ async function queryAgentMCPFullscreen() {
         if (typingDiv) typingDiv.style.display = 'none';
         
         const contentDiv = document.getElementById('ai-fullscreen-response-content');
-        if (contentDiv) contentDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+        if (contentDiv) contentDiv.innerHTML = `<p style="color: red; font-size: 14px;">Error: ${error.message}</p>`;
         
         const responseDiv = document.getElementById('ai-fullscreen-response');
         if (responseDiv) responseDiv.style.display = 'block';
